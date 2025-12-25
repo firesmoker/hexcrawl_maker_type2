@@ -1,13 +1,13 @@
 :root {
-    --bg-app: #0f1115;
-    --bg-panel: rgba(22, 27, 34, 0.7);
-    --text-primary: #e6edf3;
-    --text-secondary: #8b949e;
-    --accent-color: #7c4dff;
-    /* Deep Premium Purple */
-    --accent-hover: #9e75ff;
-    --border-color: rgba(255, 255, 255, 0.1);
-    --shadow-paper: 0 10px 30px rgba(0, 0, 0, 0.5);
+    --bg-app: #f4e4bc;
+    --bg-panel: rgba(244, 228, 188, 0.85);
+    --text-primary: #3e2723;
+    --text-secondary: #5d4037;
+    --accent-color: #8d6e63;
+    /* Warm brown/leather */
+    --accent-hover: #a1887f;
+    --border-color: rgba(62, 39, 35, 0.15);
+    --shadow-paper: 0 10px 30px rgba(62, 39, 35, 0.2);
 
     --font-main: 'Outfit', 'Inter', sans-serif;
 }
@@ -28,18 +28,19 @@ body {
 }
 
 /* Sidebar */
+/* Sidebar */
 .sidebar {
     width: 320px;
     background: var(--bg-panel);
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
     border-right: 1px solid var(--border-color);
     padding: 2rem;
     display: flex;
     flex-direction: column;
     gap: 2rem;
     z-index: 10;
-    box-shadow: 5px 0 20px rgba(0, 0, 0, 0.2);
+    box-shadow: 5px 0 20px rgba(62, 39, 35, 0.1);
 }
 
 .brand {
@@ -218,12 +219,12 @@ input[type=range]::-webkit-slider-thumb:hover {
 .main-content {
     flex: 1;
     display: flex;
-    justify-content: center;
-    align-items: center;
+    /* justify-content: center; */
+    /* align-items: center; */
     padding: 2rem;
     background-image:
-        radial-gradient(circle at 10% 20%, rgba(124, 77, 255, 0.05) 0%, transparent 20%),
-        radial-gradient(circle at 90% 80%, rgba(124, 77, 255, 0.05) 0%, transparent 20%);
+        radial-gradient(circle at 10% 20%, rgba(141, 110, 99, 0.05) 0%, transparent 20%),
+        radial-gradient(circle at 90% 80%, rgba(141, 110, 99, 0.05) 0%, transparent 20%);
     overflow: auto;
 }
 
@@ -232,7 +233,8 @@ input[type=range]::-webkit-slider-thumb:hover {
     width: 210mm;
     height: 297mm;
     margin: auto;
-    background: white;
+    background: #fffdf5;
+    /* Warmer paper color */
     box-shadow: var(--shadow-paper);
     position: relative;
     overflow: hidden;

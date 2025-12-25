@@ -29,6 +29,15 @@ document.addEventListener('DOMContentLoaded', () => {
         // Clear existing
         svgGrid.innerHTML = '';
 
+        // Get selected terrains
+        const checkboxes = document.querySelectorAll('input[name="terrain"]:checked');
+        const selectedTerrains = Array.from(checkboxes).map(cb => cb.value);
+
+        if (selectedTerrains.length === 0) {
+            alert("Please select at least one terrain type.");
+            return;
+        }
+
         const sizeInInches = parseFloat(hexSizeInput.value);
         const R = sizeInInches * PPI; // Radius (center to vertex)
         /*
@@ -86,7 +95,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 const polygon = document.createElementNS("http://www.w3.org/2000/svg", "polygon");
                 polygon.setAttribute("points", points);
                 polygon.setAttribute("transform", `translate(${x}, ${y})`);
-                polygon.setAttribute("class", "hex");
+
+                // Random terrain
+                const terrain = selectedTerrains[Math.floor(Math.random() * selectedTerrains.length)];
+                polygon.setAttribute("class", `hex ${terrain}`);
 
                 svgGrid.appendChild(polygon);
             }

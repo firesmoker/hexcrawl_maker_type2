@@ -143,6 +143,77 @@ input[type=range]::-webkit-slider-thumb:hover {
     transform: translateY(0);
 }
 
+/* Checkbox Styling */
+.terrain-options {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+.checkbox-container {
+    display: flex;
+    align-items: center;
+    position: relative;
+    padding-left: 25px;
+    margin-bottom: 5px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    user-select: none;
+    width: 45%;
+    color: var(--text-secondary);
+}
+
+.checkbox-container input {
+    position: absolute;
+    opacity: 0;
+    cursor: pointer;
+    height: 0;
+    width: 0;
+}
+
+.checkmark {
+    position: absolute;
+    top: 50%;
+    left: 0;
+    transform: translateY(-50%);
+    height: 16px;
+    width: 16px;
+    background-color: rgba(255, 255, 255, 0.1);
+    border-radius: 4px;
+    transition: all 0.2s;
+}
+
+.checkbox-container:hover input~.checkmark {
+    background-color: rgba(255, 255, 255, 0.2);
+}
+
+.checkbox-container input:checked~.checkmark {
+    background-color: var(--accent-color);
+}
+
+.checkmark:after {
+    content: "";
+    position: absolute;
+    display: none;
+}
+
+.checkbox-container input:checked~.checkmark:after {
+    display: block;
+}
+
+.checkbox-container .checkmark:after {
+    left: 5px;
+    top: 2px;
+    width: 3px;
+    height: 8px;
+    border: solid white;
+    border-width: 0 2px 2px 0;
+    -webkit-transform: rotate(45deg);
+    -ms-transform: rotate(45deg);
+    transform: rotate(45deg);
+}
+
+
 /* Main Content Area */
 .main-content {
     flex: 1;
@@ -185,6 +256,52 @@ input[type=range]::-webkit-slider-thumb:hover {
 }
 
 .hex:hover {
-    fill: rgba(124, 77, 255, 0.1);
+    stroke: var(--accent-color);
+    stroke-width: 2px;
     cursor: crosshair;
+    filter: drop-shadow(0 0 5px var(--accent-color));
+    /* Override fill on hover to show selection highlight or keep original color? 
+       Usually better to just highlight stroke or add overlay. 
+       Let's use a semi-transparent white overlay if we want, 
+       but stroke highlight is cleaner for colored hexes. */
+}
+
+/* Terrain Colors */
+.hex.sea {
+    fill: #4fc3f7;
+}
+
+.hex.plains {
+    fill: #c5e1a5;
+}
+
+.hex.swamp {
+    fill: #4e342e;
+}
+
+/* Swapped to brownish for contrast or #558b2f for leafy */
+.hex.snow {
+    fill: #f5f5f5;
+}
+
+.hex.desert {
+    fill: #fff59d;
+}
+
+.hex.wasteland {
+    fill: #78909c;
+}
+
+/* Tweaks for specific fills */
+.hex.swamp {
+    fill: #6d4c41;
+}
+
+.hex.plains {
+    fill: #aed581;
+}
+
+/* If nothing selected or default */
+.hex.default {
+    fill: transparent;
 }

@@ -119,5 +119,97 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Initial Generation
     generateGrid();
+    // Initial Generation
+    generateGrid();
     updateZoom();
+
+    // Hex Selection Logic
+    const popup = document.getElementById('hex-popup');
+    const popupOptions = document.getElementById('popup-options');
+    let activeHex = null;
+
+    const allTerrains = ['sea', 'plains', 'swamp', 'snow', 'desert', 'wasteland'];
+
+    function closePopup() {
+        popup.classList.add('hidden');
+        if (activeHex) {
+            // Optional: Remove highlight styling if any
+            activeHex.style.stroke = '';
+            activeHex.style.strokeWidth = '';
+            activeHex = null;
+        }
+    }
+
+    function openPopup(hex, x, y) {
+        activeHex = hex;
+        popupOptions.innerHTML = '';
+
+        // Improve Highlight
+        hex.style.stroke = 'var(--text-primary)';
+        hex.style.strokeWidth = '3px';
+
+        const currentClass = hex.getAttribute('class').replace('hex', '').trim();
+
+        allTerrains.forEach(terrain => {
+            const opt = document.createElement('div');
+            opt.className = `popup-option ${currentClass.includes(terrain) ? 'active' : ''}`;
+            opt.innerHTML = `<span class="color-dot ${terrain}"></span> ${terrain.charAt(0).toUpperCase() + terrain.slice(1)}`;
+
+            opt.addEventListener('click', (e) => {
+                e.stopPropagation(); // Prevent re-triggering grid click
+                hex.setAttribute('class', `hex ${terrain}`);
+                closePopup();
+            });
+
+            popupOptions.appendChild(opt);
+        });
+
+        popup.classList.remove('hidden');
+
+        // Positioning logic
+        // We need to account for zooming on the page-container.
+        // x,y are strictly SVG coords. 
+
+        // Easier approach: Use standard position relative to the hex rect in client space
+        // because the popup is inside page-container, position absolute is relative to page-container (which is scaled).
+        // If we put position absolute, it scales WITH the container.
+        // So we can use the hex coordinates directly!
+
+        // x and y passed here are center of hex from script.
+        // But we get MouseEvent target.
+        // Let's use getBBox() of the hex element is safer?
+
+        // Actually, since popup is inside #page-container, left/top are relative to the container.
+        // The hex coordinates (x,y) are exactly what we need.
+
+        // Offset slightly to right/bottom
+        popup.style.left = `${x + 20}px`;
+        popup.style.top = `${y - 20}px`;
+    }
+
+    svgGrid.addEventListener('click', (e) => {
+        const target = e.target;
+        if (target.classList.contains('hex')) {
+            // Get transform to extract X,Y
+            // transform="translate(123.4, 567.8)"
+            const transform = target.getAttribute('transform');
+            const match = /translate\(([^,]+),\s*([^)]+)\)/.exec(transform);
+
+            if (match) {
+                const x = parseFloat(match[1]);
+                const y = parseFloat(match[2]);
+                openPopup(target, x, y);
+            }
+        } else {
+            closePopup();
+        }
+    });
+
+    // Close on zoom or scroll might be tricky, but basic click-away covers most
+    pageContainer.addEventListener('click', (e) => {
+        if (e.target === pageContainer || e.target.id === 'hex-grid') {
+            closePopup();
+        }
+    });
+
 });

@@ -117,6 +117,73 @@ document.addEventListener('DOMContentLoaded', () => {
         generateGrid();
     });
 
+    const btnDownload = document.getElementById('btn-download');
+
+    btnDownload.addEventListener('click', () => {
+        // We need to render SVG to Canvas.
+        // Simplest way without external libraries (like html2canvas) is tricky with external CSS.
+        // However, since we have inline SVG, we can serialize it.
+
+        // 1. Get the SVG content
+        const serializer = new XMLSerializer();
+        let source = serializer.serializeToString(svgGrid);
+
+        // 2. Add namespaces
+        if (!source.match(/^<svg[^>]+xmlns="http\:\/\/www\.w3\.org\/2000\/svg"/)) {
+            source = source.replace(/^<svg/, '<svg xmlns="http://www.w3.org/2000/svg"');
+        }
+        if (!source.match(/^<svg[^>]+xmlns:xlink/)) {
+            source = source.replace(/^<svg/, '<svg xmlns:xlink="http://www.w3.org/1999/xlink"');
+        }
+
+        // 3. Inline Critical Styles (Fill colors) for the export to work
+        // Since we use classes, we need to inject the CSS into the SVG or inline styles.
+        // Let's grab specific styles we care about.
+        const styleRules = `
+            .hex { fill: none; stroke: #e0e0e0; stroke-width: 1px; }
+            .hex.sea { fill: #4fc3f7; }
+            .hex.plains { fill: #c5e1a5; }
+            .hex.swamp { fill: #6d4c41; }
+            .hex.snow { fill: #f5f5f5; }
+            .hex.desert { fill: #fff59d; }
+            .hex.wasteland { fill: #78909c; }
+        `;
+
+        // Inject style element
+        source = source.replace('</svg>', `<style>${styleRules}</style></svg>`);
+
+        // 4. Create Object URL
+        const svgBlob = new Blob([source], { type: "image/svg+xml;charset=utf-8" });
+        const url = URL.createObjectURL(svgBlob);
+
+        // 5. Draw to Canvas
+        const img = new Image();
+        img.onload = function () {
+            const canvas = document.createElement('canvas');
+            // Use A4 pixel dimensions (roughly)
+            canvas.width = pageContainer.clientWidth;
+            canvas.height = pageContainer.clientHeight;
+            const ctx = canvas.getContext('2d');
+
+            // White background for PNG
+            ctx.fillStyle = "#fffdf5";
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            ctx.drawImage(img, 0, 0);
+
+            // 6. Download
+            const a = document.createElement('a');
+            a.download = 'hex_map.png';
+            a.href = canvas.toDataURL('image/png');
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+
+            URL.revokeObjectURL(url);
+        };
+        img.src = url;
+    });
+
     // Initial Generation
     generateGrid();
     // Initial Generation

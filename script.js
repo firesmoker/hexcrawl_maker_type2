@@ -25,6 +25,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
     zoomInput.addEventListener('input', updateZoom);
 
+    // Clustering Logic
+    const clusteringInput = document.getElementById('clustering');
+    const clusteringVal = document.getElementById('clustering-val');
+
+    clusteringInput.addEventListener('input', () => {
+        clusteringVal.textContent = `${Math.round(clusteringInput.value * 100)}%`;
+    });
+
     function generateGrid() {
         // Clear existing
         svgGrid.innerHTML = '';
@@ -76,6 +84,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Offset to center/align nicely (optional, start slightly off to cover edges)
 
+        // Store terrain types grid for clustering
+        const gridTerrains = {}; // key: "r,c"
+
         for (let row = 0; row < rows; row++) {
             for (let col = 0; col < cols; col++) {
                 let x = col * horizDist;
@@ -96,8 +107,35 @@ document.addEventListener('DOMContentLoaded', () => {
                 polygon.setAttribute("points", points);
                 polygon.setAttribute("transform", `translate(${x}, ${y})`);
 
-                // Random terrain
-                const terrain = selectedTerrains[Math.floor(Math.random() * selectedTerrains.length)];
+                // Random terrain with Clustering
+                let terrain;
+                const clusteringFactor = parseFloat(clusteringInput.value);
+                const neighbors = [];
+
+                // Check neighbors based on row parity (offset logic)
+                // Left neighbor: (row, col-1)
+                if (gridTerrains[`${row},${col - 1}`]) neighbors.push(gridTerrains[`${row},${col - 1}`]);
+
+                // Top neighbors depend on parity
+                if (row % 2 !== 0) {
+                    // Odd Row (shifted right): Neighbors are Top-Left (row-1, col) and Top-Right (row-1, col+1)
+                    if (gridTerrains[`${row - 1},${col}`]) neighbors.push(gridTerrains[`${row - 1},${col}`]);
+                    if (gridTerrains[`${row - 1},${col + 1}`]) neighbors.push(gridTerrains[`${row - 1},${col + 1}`]);
+                } else {
+                    // Even Row: Neighbors are Top-Left (row-1, col-1) and Top-Right (row-1, col)
+                    if (gridTerrains[`${row - 1},${col - 1}`]) neighbors.push(gridTerrains[`${row - 1},${col - 1}`]);
+                    if (gridTerrains[`${row - 1},${col}`]) neighbors.push(gridTerrains[`${row - 1},${col}`]);
+                }
+
+                if (neighbors.length > 0 && Math.random() < clusteringFactor) {
+                    // Pick a random neighbor
+                    terrain = neighbors[Math.floor(Math.random() * neighbors.length)];
+                } else {
+                    // Pure random
+                    terrain = selectedTerrains[Math.floor(Math.random() * selectedTerrains.length)];
+                }
+
+                gridTerrains[`${row},${col}`] = terrain;
                 polygon.setAttribute("class", `hex ${terrain}`);
 
                 svgGrid.appendChild(polygon);

@@ -523,11 +523,15 @@ document.addEventListener('DOMContentLoaded', () => {
         // Simplest way without external libraries (like html2canvas) is tricky with external CSS.
         // However, since we have inline SVG, we can serialize it.
 
-        // 1. Get the SVG content
+        // 1. Get the SVG content and Dimensions
         const serializer = new XMLSerializer();
         let source = serializer.serializeToString(svgGrid);
 
-        // 2. Add namespaces
+        const width = pageContainer.clientWidth;
+        const height = pageContainer.clientHeight;
+        const scale = 2; // Double scale for better resolution
+
+        // 2. Add namespaces and Scaling Attributes
         if (!source.match(/^<svg[^>]+xmlns="http\:\/\/www\.w3\.org\/2000\/svg"/)) {
             source = source.replace(/^<svg/, '<svg xmlns="http://www.w3.org/2000/svg"');
         }
@@ -535,9 +539,12 @@ document.addEventListener('DOMContentLoaded', () => {
             source = source.replace(/^<svg/, '<svg xmlns:xlink="http://www.w3.org/1999/xlink"');
         }
 
-        // 3. Inline Critical Styles (Fill colors) for the export to work
-        // Since we use classes, we need to inject the CSS into the SVG or inline styles.
-        // Let's grab specific styles we care about.
+        // Inject width, height, and viewBox to ensure high-res rasterization
+        // This tells the browser to treat the SVG as a larger image (scale * width/height)
+        // while mapping the original coordinate system (viewBox) to that larger space.
+        source = source.replace(/^<svg/, `<svg width="${width * scale}" height="${height * scale}" viewBox="0 0 ${width} ${height}"`);
+
+        // 3. Inline Critical Styles (Fill colors & Filters)
         const styleRules = `
             .hex { fill: none; stroke: #e0e0e0; stroke-width: 1px; }
             .hex.sea { fill: #4fc3f7; }
@@ -562,20 +569,22 @@ document.addEventListener('DOMContentLoaded', () => {
         const img = new Image();
         img.onload = function () {
             const canvas = document.createElement('canvas');
-            // Use A4 pixel dimensions (roughly)
-            canvas.width = pageContainer.clientWidth;
-            canvas.height = pageContainer.clientHeight;
+            // Create canvas at high resolution
+            canvas.width = width * scale;
+            canvas.height = height * scale;
             const ctx = canvas.getContext('2d');
 
             // White background for PNG
             ctx.fillStyle = "#fffdf5";
             ctx.fillRect(0, 0, canvas.width, canvas.height);
 
+            // Draw image. Since the SVG source itself claims to be width*scale x height*scale,
+            // we draw it 1:1 onto the canvas.
             ctx.drawImage(img, 0, 0);
 
             // 6. Download
             const a = document.createElement('a');
-            a.download = 'hex_map.png';
+            a.download = 'hex_map_high_res.png';
             a.href = canvas.toDataURL('image/png');
             document.body.appendChild(a);
             a.click();

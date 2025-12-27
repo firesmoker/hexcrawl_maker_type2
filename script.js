@@ -281,6 +281,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
     function openPopup(hex, x, y) {
+        closePopup();
         activeHex = hex;
         popupOptions.innerHTML = '';
 

@@ -197,6 +197,12 @@ input[type=range]::-webkit-slider-thumb:hover {
     /* Fixed width for label part */
 }
 
+.mini-check {
+    font-size: 0.7rem !important;
+    margin-top: 0.2rem;
+    opacity: 0.8;
+}
+
 .terrain-weight {
     position: static !important;
     /* Override generic absolute positioning removed */

@@ -4,6 +4,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const btnGenerate = document.getElementById('btn-generate');
     const svgGrid = document.getElementById('hex-grid');
     const pageContainer = document.getElementById('page-container');
+    const autoApplyInput = document.getElementById('auto-apply-hex');
 
     // Hex Selection Logic - Defined early to avoid ReferenceErrors during initial generation
     const popup = document.getElementById('hex-popup');
@@ -195,9 +196,12 @@ document.addEventListener('DOMContentLoaded', () => {
     // Event Listeners
     hexSizeInput.addEventListener('input', updateValDisplay);
 
-    // Auto-generate on drag? Might be too heavy for many DOM elements. 
-    // Let's do it on 'change' (when mouseup) or click Generate.
-    hexSizeInput.addEventListener('change', generateGrid);
+    // Auto-generate on change if auto-apply is enabled. 
+    hexSizeInput.addEventListener('change', () => {
+        if (autoApplyInput && autoApplyInput.checked) {
+            generateGrid();
+        }
+    });
 
     btnGenerate.addEventListener('click', () => {
         // Add a small rotation or animation class just for feel?

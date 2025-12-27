@@ -27,22 +27,31 @@ body {
     display: flex;
 }
 
-/* Sidebar */
-/* Sidebar */
-.sidebar {
-    width: 320px;
+/* Sidebar & Right Panel */
+.sidebar,
+.right-panel {
+    width: 280px;
     background: var(--bg-panel);
     backdrop-filter: blur(10px);
     -webkit-backdrop-filter: blur(10px);
-    border-right: 1px solid var(--border-color);
     padding: 1.25rem;
     display: flex;
     flex-direction: column;
     gap: 1.2rem;
     z-index: 10;
-    box-shadow: 5px 0 20px rgba(62, 39, 35, 0.1);
     height: 100vh;
     overflow-y: auto;
+    flex-shrink: 0;
+}
+
+.sidebar {
+    border-right: 1px solid var(--border-color);
+    box-shadow: 5px 0 20px rgba(62, 39, 35, 0.1);
+}
+
+.right-panel {
+    border-left: 1px solid var(--border-color);
+    box-shadow: -5px 0 20px rgba(62, 39, 35, 0.1);
 }
 
 .brand {

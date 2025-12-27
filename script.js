@@ -291,8 +291,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
         hex.setAttribute('data-addon', addonType);
 
-        // Use customLabel if provided, otherwise default to addonType
-        const labelText = customLabel !== undefined ? customLabel : addonType;
+        // Use customLabel if provided (even empty string), otherwise default to addonType
+        // Strict check for undefined ensures we accept empty strings
+        const labelText = (customLabel === undefined) ? addonType : customLabel;
         hex.setAttribute('data-label', labelText);
 
         const transform = hex.getAttribute('transform');
@@ -1046,7 +1047,17 @@ document.addEventListener('DOMContentLoaded', () => {
         saveHistory();
     });
 
-    // CSV Export
+    // CSV Export - Helper to escape CSV fields
+    function escapeCSVField(field) {
+        if (field === null || field === undefined) return '';
+        const str = String(field);
+        // If field contains comma, quote, or newline, wrap in quotes and escape internal quotes
+        if (str.includes(',') || str.includes('"') || str.includes('\n') || str.includes('\r')) {
+            return '"' + str.replace(/"/g, '""') + '"';
+        }
+        return str;
+    }
+
     btnExport.addEventListener('click', () => {
         let csvContent = `metadata,hexSize,${hexSizeInput.value}\n`;
         csvContent += `row,col,terrain,addon,label\n`;
@@ -1058,7 +1069,8 @@ document.addEventListener('DOMContentLoaded', () => {
             const terrain = hex.getAttribute('class').replace('hex', '').replace('selected', '').trim();
             const addon = hex.getAttribute('data-addon') || '';
             const label = hex.getAttribute('data-label') || '';
-            csvContent += `${r},${c},${terrain},${addon},${label}\n`;
+            // Properly escape all fields for CSV format
+            csvContent += `${r},${c},${escapeCSVField(terrain)},${escapeCSVField(addon)},${escapeCSVField(label)}\n`;
         });
 
         // Paths Section
@@ -1066,8 +1078,8 @@ document.addEventListener('DOMContentLoaded', () => {
         const paths = pathLayer.querySelectorAll('.map-path');
         paths.forEach(p => {
             const type = p.getAttribute('class').replace('map-path', '').trim();
-            const nodes = p.getAttribute('data-hex-path');
-            csvContent += `path,${type},"${nodes}"\n`;
+            const nodes = p.getAttribute('data-hex-path') || '';
+            csvContent += `path,${escapeCSVField(type)},${escapeCSVField(nodes)}\n`;
         });
 
         const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
@@ -1085,6 +1097,41 @@ document.addEventListener('DOMContentLoaded', () => {
         csvUpload.click();
     });
 
+    // Helper to parse CSV line respecting quotes
+    function parseCSVLine(text) {
+        const result = [];
+        let cell = '';
+        let insideQuote = false;
+
+        for (let i = 0; i < text.length; i++) {
+            const char = text[i];
+
+            if (insideQuote) {
+                if (char === '"') {
+                    if (i + 1 < text.length && text[i + 1] === '"') {
+                        cell += '"';
+                        i++; // skip next quote
+                    } else {
+                        insideQuote = false;
+                    }
+                } else {
+                    cell += char;
+                }
+            } else {
+                if (char === '"') {
+                    insideQuote = true;
+                } else if (char === ',') {
+                    result.push(cell);
+                    cell = '';
+                } else {
+                    cell += char;
+                }
+            }
+        }
+        result.push(cell);
+        return result;
+    }
+
     csvUpload.addEventListener('change', (e) => {
         const file = e.target.files[0];
         if (!file) return;
@@ -1099,8 +1146,11 @@ document.addEventListener('DOMContentLoaded', () => {
             closePopup();
             hexLayer.innerHTML = '';
             addonLayer.innerHTML = '';
+            const existingPaths = pathLayer.querySelectorAll('.map-path');
+            existingPaths.forEach(p => p.remove());
 
             // Parse metadata
+            // Use simple split for metadata as it is key,value format
             const meta = lines[0].split(',');
             if (meta[0] === 'metadata' && meta[1] === 'hexSize') {
                 hexSizeInput.value = meta[2];
@@ -1118,14 +1168,25 @@ document.addEventListener('DOMContentLoaded', () => {
 
             // Parse hexes
             for (let i = 2; i < lines.length; i++) {
-                const parts = lines[i].split(',');
+                const line = lines[i].trim();
+                if (!line) continue;
+
+                // Stop parsing hexes when we hit the paths section
+                if (line === 'SECTION_PATHS' || line.startsWith('path,')) {
+                    break;
+                }
+
+                // Use the robust parser
+                const parts = parseCSVLine(line);
                 if (parts.length < 3) continue;
 
                 const r = parseInt(parts[0]);
                 const c = parseInt(parts[1]);
                 const terrain = parts[2].trim();
+
+                // Parts[3] is addon, Parts[4] is label
                 const addon = parts[3] ? parts[3].trim() : '';
-                const label = parts[4] ? parts[4].trim() : '';
+                const label = parts[4] !== undefined ? parts[4].trim() : undefined;
 
                 let x = c * hexWidth;
                 let y = r * vertDist;
@@ -1138,30 +1199,33 @@ document.addEventListener('DOMContentLoaded', () => {
                 polygon.setAttribute("data-row", r);
                 polygon.setAttribute("data-col", c);
                 if (addon) polygon.setAttribute("data-addon", addon);
-                if (label) polygon.setAttribute("data-label", label);
+
+                if (label !== undefined) {
+                    polygon.setAttribute("data-label", label);
+                }
 
                 hexLayer.appendChild(polygon);
-                if (addon) updateAddonDisplay(polygon, addon, label || undefined);
+                if (addon) updateAddonDisplay(polygon, addon, label);
             }
 
             // Parse Paths if any
             let pathSectionObj = [];
             let inPathSection = false;
             for (let i = 0; i < lines.length; i++) {
-                if (lines[i].trim() === 'SECTION_PATHS') {
+                const line = lines[i].trim();
+                if (line === 'SECTION_PATHS') {
                     inPathSection = true;
                     continue;
                 }
-                if (inPathSection) {
-                    const parts = lines[i].split(',');
+                if (inPathSection && line) {
                     // format: path,type,"nodes"
-                    // naive split ignores quotes, need to handle "nodes" which contains ;
+                    const parts = parseCSVLine(line);
                     if (parts.length < 3) continue;
-                    // Simple parse: type is index 1. Everything after index 1 is nodes (quoted).
-                    const type = parts[1];
-                    const rawNodes = lines[i].substring(lines[i].indexOf('"') + 1, lines[i].lastIndexOf('"'));
 
-                    pathSectionObj.push({ type: type, nodes: rawNodes });
+                    const type = parts[1];
+                    const nodes = parts[2]; // parseCSVLine handles quotes automatically
+
+                    pathSectionObj.push({ type: type, nodes: nodes });
                 }
             }
             restorePaths(pathSectionObj, hexSizeInput.value);

@@ -3,6 +3,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const hexSizeVal = document.getElementById('hex-size-val');
     const btnGenerate = document.getElementById('btn-generate');
     const svgGrid = document.getElementById('hex-grid');
+    const hexLayer = document.getElementById('hex-layer');
+    const addonLayer = document.getElementById('addon-layer');
     const pageContainer = document.getElementById('page-container');
     const pageWrapper = document.getElementById('page-wrapper');
     const autoApplyInput = document.getElementById('auto-apply-hex');
@@ -123,7 +125,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const col = hex.getAttribute('data-col');
 
         // Remove existing addon group if any
-        const existingGroup = svgGrid.querySelector(`g.addon-group[data-row="${row}"][data-col="${col}"]`);
+        const existingGroup = addonLayer.querySelector(`g.addon-group[data-row="${row}"][data-col="${col}"]`);
         if (existingGroup) existingGroup.remove();
 
         // If no addonType provided, clear attributes and return
@@ -168,7 +170,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         group.appendChild(img);
         group.appendChild(textNode);
-        svgGrid.appendChild(group);
+        addonLayer.appendChild(group);
     }
 
     // Constants for A4 at 96 DPI (Web standard for "inch")
@@ -239,7 +241,8 @@ document.addEventListener('DOMContentLoaded', () => {
     function generateGrid(preservedData = null) {
         closePopup();
         // Clear existing
-        svgGrid.innerHTML = '';
+        hexLayer.innerHTML = '';
+        addonLayer.innerHTML = '';
 
         // Get selected terrains and weights
         const checkboxes = document.querySelectorAll('input[name="terrain"]:checked');
@@ -330,7 +333,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 gridTerrains[`${row},${col}`] = terrain;
                 polygon.setAttribute("class", `hex ${terrain}`);
 
-                svgGrid.appendChild(polygon);
+                hexLayer.appendChild(polygon);
                 if (addon) {
                     updateAddonDisplay(polygon, addon, label);
                 }
@@ -439,6 +442,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
         popupOptions.innerHTML = '';
         hex.classList.add('selected');
+        // Bring to front inside SVG to ensure full stroke is visible
+        hex.parentElement.appendChild(hex);
 
         const currentClass = hex.getAttribute('class').replace('hex', '').replace('selected', '').trim();
         const currentAddon = hex.getAttribute('data-addon');
@@ -591,7 +596,10 @@ document.addEventListener('DOMContentLoaded', () => {
         if (selectedHexes.length > 0) {
             const cluster = getCluster(selectedHexes[0]);
             selectedHexes = cluster;
-            selectedHexes.forEach(h => h.classList.add('selected'));
+            selectedHexes.forEach(h => {
+                h.classList.add('selected');
+                h.parentElement.appendChild(h);
+            });
         }
     });
 
@@ -608,6 +616,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 const y = parseFloat(match[2]);
                 openPopup(target, x, y);
             }
+        }
+    });
+
+    hexLayer.addEventListener('mouseover', (e) => {
+        if (e.target.classList.contains('hex')) {
+            // Bring to front on hover so the highlight stroke is never clipped
+            e.target.parentElement.appendChild(e.target);
         }
     });
 
@@ -681,7 +696,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
             // Clear current grid
             closePopup();
-            svgGrid.innerHTML = '';
+            hexLayer.innerHTML = '';
+            addonLayer.innerHTML = '';
 
             // Parse metadata
             const meta = lines[0].split(',');
@@ -723,7 +739,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (addon) polygon.setAttribute("data-addon", addon);
                 if (label) polygon.setAttribute("data-label", label);
 
-                svgGrid.appendChild(polygon);
+                hexLayer.appendChild(polygon);
                 if (addon) updateAddonDisplay(polygon, addon, label || undefined);
             }
 

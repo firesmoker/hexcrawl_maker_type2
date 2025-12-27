@@ -386,7 +386,7 @@ input[type=range]::-webkit-slider-thumb:hover {
     stroke-width: 3px;
     cursor: crosshair;
     filter: drop-shadow(0 0 5px var(--accent-color));
-    z-index: 5;
+    paint-order: stroke fill;
 }
 
 /* Terrain Colors */

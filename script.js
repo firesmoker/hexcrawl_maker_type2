@@ -5,21 +5,21 @@ document.addEventListener('DOMContentLoaded', () => {
     const svgGrid = document.getElementById('hex-grid');
     const pageContainer = document.getElementById('page-container');
     const autoApplyInput = document.getElementById('auto-apply-hex');
+    const btnSelectCluster = document.getElementById('btn-select-cluster');
 
     // Hex Selection Logic - Defined early to avoid ReferenceErrors during initial generation
     const popup = document.getElementById('hex-popup');
     const popupOptions = document.getElementById('popup-options');
-    let activeHex = null;
+    let selectedHexes = [];
     const allTerrains = ['sea', 'plains', 'swamp', 'snow', 'desert', 'wasteland'];
 
     function closePopup() {
         if (!popup) return;
         popup.classList.add('hidden');
-        if (activeHex) {
-            activeHex.style.stroke = '';
-            activeHex.style.strokeWidth = '';
-            activeHex = null;
-        }
+        selectedHexes.forEach(h => {
+            h.classList.remove('selected');
+        });
+        selectedHexes = [];
     }
 
     // Constants for A4 at 96 DPI (Web standard for "inch")
@@ -187,6 +187,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 gridTerrains[`${row},${col}`] = terrain;
                 polygon.setAttribute("class", `hex ${terrain}`);
+                polygon.setAttribute("data-row", row);
+                polygon.setAttribute("data-col", col);
 
                 svgGrid.appendChild(polygon);
             }
@@ -286,14 +288,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function openPopup(hex, x, y) {
         closePopup();
-        activeHex = hex;
+        selectedHexes = [hex];
         popupOptions.innerHTML = '';
 
         // Improve Highlight
-        hex.style.stroke = 'var(--text-primary)';
-        hex.style.strokeWidth = '3px';
+        hex.classList.add('selected');
 
-        const currentClass = hex.getAttribute('class').replace('hex', '').trim();
+        const currentClass = hex.getAttribute('class').replace('hex', '').replace('selected', '').trim();
 
         allTerrains.forEach(terrain => {
             const opt = document.createElement('div');
@@ -302,7 +303,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
             opt.addEventListener('click', (e) => {
                 e.stopPropagation(); // Prevent re-triggering grid click
-                hex.setAttribute('class', `hex ${terrain}`);
+                selectedHexes.forEach(h => {
+                    h.setAttribute('class', `hex ${terrain}`);
+                });
                 closePopup();
             });
 
@@ -331,6 +334,53 @@ document.addEventListener('DOMContentLoaded', () => {
         popup.style.left = `${popupLeft}px`;
         popup.style.top = `${popupTop}px`;
     }
+
+    function getCluster(startHex) {
+        const row = parseInt(startHex.getAttribute('data-row'));
+        const col = parseInt(startHex.getAttribute('data-col'));
+        const type = startHex.getAttribute('class').replace('hex', '').replace('selected', '').trim();
+
+        const cluster = [];
+        const visited = new Set();
+        const queue = [[row, col]];
+        visited.add(`${row},${col}`);
+
+        while (queue.length > 0) {
+            const [r, c] = queue.shift();
+            // Select by both class type and coordinates to be very specific
+            const hexEl = document.querySelector(`.hex[data-row="${r}"][data-col="${c}"]`);
+
+            if (hexEl) {
+                const hexType = hexEl.getAttribute('class').replace('hex', '').replace('selected', '').trim();
+                if (hexType === type) {
+                    cluster.push(hexEl);
+
+                    // Neighbors logic
+                    const nCoords = (r % 2 === 0)
+                        ? [[r, c - 1], [r, c + 1], [r - 1, c - 1], [r - 1, r], [r + 1, c - 1], [r + 1, c]]
+                        : [[r, c - 1], [r, c + 1], [r - 1, c], [r - 1, c + 1], [r + 1, c], [r + 1, c + 1]];
+
+                    nCoords.forEach(([nr, nc]) => {
+                        const key = `${nr},${nc}`;
+                        if (!visited.has(key)) {
+                            visited.add(key);
+                            queue.push([nr, nc]);
+                        }
+                    });
+                }
+            }
+        }
+        return cluster;
+    }
+
+    btnSelectCluster.addEventListener('click', (e) => {
+        e.stopPropagation();
+        if (selectedHexes.length > 0) {
+            const cluster = getCluster(selectedHexes[0]);
+            selectedHexes = cluster;
+            selectedHexes.forEach(h => h.classList.add('selected'));
+        }
+    });
 
     svgGrid.addEventListener('click', (e) => {
         const target = e.target;

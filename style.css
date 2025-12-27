@@ -312,15 +312,13 @@ input[type=range]::-webkit-slider-thumb:hover {
     transition: fill 0.2s;
 }
 
-.hex:hover {
+.hex:hover,
+.hex.selected {
     stroke: var(--accent-color);
-    stroke-width: 2px;
+    stroke-width: 3px;
     cursor: crosshair;
     filter: drop-shadow(0 0 5px var(--accent-color));
-    /* Override fill on hover to show selection highlight or keep original color? 
-       Usually better to just highlight stroke or add overlay. 
-       Let's use a semi-transparent white overlay if we want, 
-       but stroke highlight is cleaner for colored hexes. */
+    z-index: 5;
 }
 
 /* Terrain Colors */
@@ -402,11 +400,32 @@ input[type=range]::-webkit-slider-thumb:hover {
     font-size: 0.85rem;
     font-weight: 700;
     color: var(--text-secondary);
-    margin-bottom: 0.8rem;
+    margin-bottom: 0.5rem;
     text-transform: uppercase;
     letter-spacing: 0.05em;
     border-bottom: 1px solid var(--border-color);
     padding-bottom: 0.4rem;
+}
+
+.btn-cluster {
+    width: 100%;
+    background: transparent;
+    color: var(--accent-color);
+    border: 1px solid var(--accent-color);
+    padding: 0.5rem;
+    border-radius: 4px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    cursor: pointer;
+    margin-bottom: 0.8rem;
+    transition: all 0.2s ease;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.btn-cluster:hover {
+    background: var(--accent-color);
+    color: white;
 }
 
 .popup-options {

@@ -300,7 +300,6 @@ input[type=range]::-webkit-slider-thumb:hover {
     /* Ensure it scales down on smaller screens if needed, though scroll is better for "making" mechanics */
     flex-shrink: 0;
     transform-origin: 0 0;
-    transition: transform 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94);
 }
 
 #hex-grid {

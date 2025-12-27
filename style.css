@@ -169,6 +169,40 @@ input[type=range]::-webkit-slider-thumb:hover {
     transform: translateY(0);
 }
 
+.history-actions {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 0.5rem;
+}
+
+.btn-history {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.4rem;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--border-color);
+    color: white;
+    padding: 0.4rem;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.btn-history:hover:not(:disabled) {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: var(--accent-color);
+}
+
+.btn-history:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+    filter: grayscale(1);
+}
+
 .side-actions {
     display: grid;
     grid-template-columns: 1fr 1fr;
@@ -528,11 +562,7 @@ input[type=range]::-webkit-slider-thumb:hover {
     background: rgba(255, 255, 255, 0.1);
 }
 
-.addon-item.clear {
-    color: #ff5252;
-    border-top: 1px solid var(--border-color);
-    margin-top: 0.2rem;
-}
+
 
 .btn-cluster {
     width: 100%;

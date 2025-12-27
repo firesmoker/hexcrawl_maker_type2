@@ -13,6 +13,13 @@ document.addEventListener('DOMContentLoaded', () => {
     const btnShowAddons = document.getElementById('btn-show-addons');
     const btnRemoveAddon = document.getElementById('btn-remove-addon');
     const addonList = document.getElementById('addon-list');
+    const btnUndo = document.getElementById('btn-undo');
+    const btnRedo = document.getElementById('btn-redo');
+
+    // History Logic
+    let undoStack = [];
+    let redoStack = [];
+    const historyLimit = 50;
 
     // Hex Selection Logic - Defined early to avoid ReferenceErrors during initial generation
     const popup = document.getElementById('hex-popup');
@@ -32,6 +39,82 @@ document.addEventListener('DOMContentLoaded', () => {
             h.classList.remove('selected');
         });
         selectedHexes = [];
+    }
+
+    function updateHistoryUI() {
+        btnUndo.disabled = undoStack.length === 0;
+        btnRedo.disabled = redoStack.length === 0;
+    }
+
+    function saveHistory() {
+        const hexes = svgGrid.querySelectorAll('.hex');
+        const hexData = Array.from(hexes).map(h => ({
+            r: h.getAttribute('data-row'),
+            c: h.getAttribute('data-col'),
+            t: h.getAttribute('class').replace('hex', '').replace('selected', '').trim(),
+            a: h.getAttribute('data-addon') || '',
+            l: h.getAttribute('data-label') || ''
+        }));
+
+        undoStack.push({
+            hexSize: hexSizeInput.value,
+            hexes: hexData
+        });
+
+        if (undoStack.length > historyLimit) {
+            undoStack.shift();
+        }
+
+        redoStack = [];
+        updateHistoryUI();
+    }
+
+    function applyState(state) {
+        if (!state) return;
+
+        const currentSize = hexSizeInput.value;
+        if (state.hexSize !== currentSize) {
+            hexSizeInput.value = state.hexSize;
+            updateValDisplay();
+            // Full re-render needed for geometry change
+            generateGrid(state.hexes);
+        } else {
+            // Hot swap data without clearing everything
+            state.hexes.forEach(data => {
+                const hex = svgGrid.querySelector(`.hex[data-row="${data.r}"][data-col="${data.c}"]`);
+                if (hex) {
+                    hex.setAttribute('class', `hex ${data.t}`);
+                    if (data.a) {
+                        updateAddonDisplay(hex, data.a, data.l);
+                    } else {
+                        updateAddonDisplay(hex, null);
+                    }
+                }
+            });
+        }
+        updateHistoryUI();
+    }
+
+    function undo() {
+        if (undoStack.length <= 1) return;
+
+        closePopup();
+
+        const current = undoStack.pop();
+        redoStack.push(current);
+
+        const prevState = undoStack[undoStack.length - 1];
+        applyState(prevState);
+    }
+
+    function redo() {
+        if (redoStack.length === 0) return;
+
+        closePopup();
+
+        const nextState = redoStack.pop();
+        undoStack.push(nextState);
+        applyState(nextState);
     }
 
     // Helper to add/update addon (icon + text) on a hex
@@ -153,7 +236,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
-    function generateGrid() {
+    function generateGrid(preservedData = null) {
         closePopup();
         // Clear existing
         svgGrid.innerHTML = '';
@@ -164,35 +247,20 @@ document.addEventListener('DOMContentLoaded', () => {
 
         checkboxes.forEach(cb => {
             const terrain = cb.value;
-            // Find associated slider
-            // We can find it by finding the parent .terrain-row then the input
-            // Or selection by data-terrain attribute
             const range = document.querySelector(`input.terrain-weight[data-terrain="${terrain}"]`);
-            const weight = range ? parseInt(range.value, 10) : 50; // default 50
-
-            // Add to pool 'weight' times? Or better use CDF. 
-            // For simple implementation (weight 1-100), adding to array is fine (max 600 items), very fast lookup.
+            const weight = range ? parseInt(range.value, 10) : 50;
             for (let i = 0; i < weight; i++) {
                 weightedPool.push(terrain);
             }
         });
 
-        if (weightedPool.length === 0) {
+        if (weightedPool.length === 0 && !preservedData) {
             alert("Please select at least one terrain type.");
             return;
         }
 
         const sizeInInches = parseFloat(hexSizeInput.value);
-        const R = sizeInInches * PPI; // Radius (center to vertex)
-        /*
-            For pointy topped hex:
-            Width = sqrt(3) * R
-            Height = 2 * R
-            
-            Horizontal distance between hex centers = Width
-            Vertical distance between hex centers = 3/4 * Height = 1.5 * R
-        */
-
+        const R = sizeInInches * PPI;
         const hexWidth = Math.sqrt(3) * R;
         const hexHeight = 2 * R;
 
@@ -205,36 +273,18 @@ document.addEventListener('DOMContentLoaded', () => {
         const cols = Math.ceil(pageWidth / horizDist) + 1;
         const rows = Math.ceil(pageHeight / vertDist) + 1;
 
-        // Create hex points string
-        // Pointy top vertices: (0, -R), (w/2, -R/2), (w/2, R/2), (0, R), (-w/2, R/2), (-w/2, -R/2)
         const w2 = hexWidth / 2;
         const r2 = R / 2;
-        const points = [
-            `0,-${R}`,
-            `${w2},-${r2}`,
-            `${w2},${r2}`,
-            `0,${R}`,
-            `-${w2},${r2}`,
-            `-${w2},-${r2}`
-        ].join(' ');
+        const points = [`0,-${R}`, `${w2},-${r2}`, `${w2},${r2}`, `0,${R}`, `-${w2},${r2}`, `-${w2},-${r2}`].join(' ');
 
-        // Offset to center/align nicely (optional, start slightly off to cover edges)
-
-        // Store terrain types grid for clustering
-        const gridTerrains = {}; // key: "r,c"
+        const gridTerrains = {};
 
         for (let row = 0; row < rows; row++) {
             for (let col = 0; col < cols; col++) {
                 let x = col * horizDist;
                 let y = row * vertDist;
+                if (row % 2 !== 0) x += hexWidth / 2;
 
-                // Offset every odd row
-                if (row % 2 !== 0) {
-                    x += hexWidth / 2;
-                }
-
-                // Check boundary roughly to avoid rendering too many outside
-                // Allow some overlap for partial hexes
                 if (x < -hexWidth || x > pageWidth + hexWidth || y < -hexHeight || y > pageHeight + hexHeight) {
                     continue;
                 }
@@ -242,42 +292,54 @@ document.addEventListener('DOMContentLoaded', () => {
                 const polygon = document.createElementNS("http://www.w3.org/2000/svg", "polygon");
                 polygon.setAttribute("points", points);
                 polygon.setAttribute("transform", `translate(${x}, ${y})`);
+                polygon.setAttribute("data-row", row);
+                polygon.setAttribute("data-col", col);
 
-                // Random terrain with Clustering
-                let terrain;
-                const clusteringFactor = parseFloat(clusteringInput.value);
-                const neighbors = [];
+                let terrain, addon = '', label = '';
 
-                // Check neighbors based on row parity (offset logic)
-                // Left neighbor: (row, col-1)
-                if (gridTerrains[`${row},${col - 1}`]) neighbors.push(gridTerrains[`${row},${col - 1}`]);
-
-                // Top neighbors depend on parity
-                if (row % 2 !== 0) {
-                    // Odd Row (shifted right): Neighbors are Top-Left (row-1, col) and Top-Right (row-1, col+1)
-                    if (gridTerrains[`${row - 1},${col}`]) neighbors.push(gridTerrains[`${row - 1},${col}`]);
-                    if (gridTerrains[`${row - 1},${col + 1}`]) neighbors.push(gridTerrains[`${row - 1},${col + 1}`]);
+                if (preservedData) {
+                    const data = preservedData.find(d => d.r == row && d.c == col);
+                    if (data) {
+                        terrain = data.t;
+                        addon = data.a;
+                        label = data.l;
+                    } else {
+                        // Fallback if index mismatch
+                        terrain = weightedPool[0];
+                    }
                 } else {
-                    // Even Row: Neighbors are Top-Left (row-1, col-1) and Top-Right (row-1, col)
-                    if (gridTerrains[`${row - 1},${col - 1}`]) neighbors.push(gridTerrains[`${row - 1},${col - 1}`]);
-                    if (gridTerrains[`${row - 1},${col}`]) neighbors.push(gridTerrains[`${row - 1},${col}`]);
-                }
+                    // Random terrain with Clustering
+                    const clusteringFactor = parseFloat(clusteringInput.value);
+                    const neighbors = [];
+                    if (gridTerrains[`${row},${col - 1}`]) neighbors.push(gridTerrains[`${row},${col - 1}`]);
+                    if (row % 2 !== 0) {
+                        if (gridTerrains[`${row - 1},${col}`]) neighbors.push(gridTerrains[`${row - 1},${col}`]);
+                        if (gridTerrains[`${row - 1},${col + 1}`]) neighbors.push(gridTerrains[`${row - 1},${col + 1}`]);
+                    } else {
+                        if (gridTerrains[`${row - 1},${col - 1}`]) neighbors.push(gridTerrains[`${row - 1},${col - 1}`]);
+                        if (gridTerrains[`${row - 1},${col}`]) neighbors.push(gridTerrains[`${row - 1},${col}`]);
+                    }
 
-                if (neighbors.length > 0 && Math.random() < clusteringFactor) {
-                    // Pick a random neighbor
-                    terrain = neighbors[Math.floor(Math.random() * neighbors.length)];
-                } else {
-                    // Weighted random
-                    terrain = weightedPool[Math.floor(Math.random() * weightedPool.length)];
+                    if (neighbors.length > 0 && Math.random() < clusteringFactor) {
+                        terrain = neighbors[Math.floor(Math.random() * neighbors.length)];
+                    } else {
+                        terrain = weightedPool[Math.floor(Math.random() * weightedPool.length)];
+                    }
                 }
 
                 gridTerrains[`${row},${col}`] = terrain;
                 polygon.setAttribute("class", `hex ${terrain}`);
-                polygon.setAttribute("data-row", row);
-                polygon.setAttribute("data-col", col);
 
                 svgGrid.appendChild(polygon);
+                if (addon) {
+                    updateAddonDisplay(polygon, addon, label);
+                }
             }
+        }
+
+        // Only save history if this is a fresh manual generation
+        if (!preservedData) {
+            saveHistory();
         }
     }
 
@@ -405,6 +467,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 selectedHexes.forEach(h => {
                     h.setAttribute('class', `hex ${terrain}`);
                 });
+                saveHistory();
                 closePopup();
             });
 
@@ -424,20 +487,13 @@ document.addEventListener('DOMContentLoaded', () => {
             item.addEventListener('click', (e) => {
                 e.stopPropagation();
                 selectedHexes.forEach(h => updateAddonDisplay(h, addon));
+                saveHistory();
                 closePopup();
             });
             addonList.appendChild(item);
         });
 
-        const clearItem = document.createElement('div');
-        clearItem.className = 'addon-item clear';
-        clearItem.textContent = 'None / Clear';
-        clearItem.addEventListener('click', (e) => {
-            e.stopPropagation();
-            selectedHexes.forEach(h => updateAddonDisplay(h, null));
-            closePopup();
-        });
-        addonList.appendChild(clearItem);
+
 
         popup.classList.remove('hidden');
 
@@ -474,6 +530,7 @@ document.addEventListener('DOMContentLoaded', () => {
     btnRemoveAddon.addEventListener('click', (e) => {
         e.stopPropagation();
         selectedHexes.forEach(h => updateAddonDisplay(h, null));
+        saveHistory();
         closePopup();
     });
 
@@ -578,6 +635,10 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
+    hexLabelInput.addEventListener('blur', () => {
+        saveHistory();
+    });
+
     // CSV Export
     btnExport.addEventListener('click', () => {
         let csvContent = `metadata,hexSize,${hexSizeInput.value}\n`;
@@ -668,9 +729,34 @@ document.addEventListener('DOMContentLoaded', () => {
 
             // Sync visual zoom/footprint
             updateZoom();
+            saveHistory(); // Preserve imported state
             csvUpload.value = ''; // Reset input
         };
         reader.readAsText(file);
+    });
+
+    btnUndo.addEventListener('click', undo);
+    btnRedo.addEventListener('click', redo);
+
+    // Keyboard Shortcuts
+    document.addEventListener('keydown', (e) => {
+        const isMac = navigator.platform.toUpperCase().indexOf('MAC') >= 0;
+        const ctrlKey = isMac ? e.metaKey : e.ctrlKey;
+
+        if (ctrlKey && e.key.toLowerCase() === 'z') {
+            if (e.shiftKey) {
+                // Redo (Ctrl+Shift+Z)
+                redo();
+            } else {
+                // Undo (Ctrl+Z)
+                undo();
+            }
+            e.preventDefault();
+        } else if (ctrlKey && e.key.toLowerCase() === 'y') {
+            // Redo (Ctrl+Y)
+            redo();
+            e.preventDefault();
+        }
     });
 
 });

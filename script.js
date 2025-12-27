@@ -7,6 +7,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const pageWrapper = document.getElementById('page-wrapper');
     const autoApplyInput = document.getElementById('auto-apply-hex');
     const btnSelectCluster = document.getElementById('btn-select-cluster');
+    const btnExport = document.getElementById('btn-export');
+    const btnImport = document.getElementById('btn-import');
+    const csvUpload = document.getElementById('csv-upload');
 
     // Hex Selection Logic - Defined early to avoid ReferenceErrors during initial generation
     const popup = document.getElementById('hex-popup');
@@ -440,5 +443,93 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Close on scroll
     document.querySelector('.main-content').addEventListener('scroll', closePopup);
+
+    // CSV Export
+    btnExport.addEventListener('click', () => {
+        let csvContent = `metadata,hexSize,${hexSizeInput.value}\n`;
+        csvContent += `row,col,terrain\n`;
+
+        const hexes = svgGrid.querySelectorAll('.hex');
+        hexes.forEach(hex => {
+            const r = hex.getAttribute('data-row');
+            const c = hex.getAttribute('data-col');
+            const terrain = hex.getAttribute('class').replace('hex', '').replace('selected', '').trim();
+            csvContent += `${r},${c},${terrain}\n`;
+        });
+
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.setAttribute("href", url);
+        link.setAttribute("download", "hex_map.csv");
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    });
+
+    // CSV Import
+    btnImport.addEventListener('click', () => {
+        csvUpload.click();
+    });
+
+    csvUpload.addEventListener('change', (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = (event) => {
+            const content = event.target.result;
+            const lines = content.split('\n');
+            if (lines.length < 2) return;
+
+            // Clear current grid
+            closePopup();
+            svgGrid.innerHTML = '';
+
+            // Parse metadata
+            const meta = lines[0].split(',');
+            if (meta[0] === 'metadata' && meta[1] === 'hexSize') {
+                hexSizeInput.value = meta[2];
+                updateValDisplay();
+            }
+
+            // Constants based on new hexSize
+            const sizeInInches = parseFloat(hexSizeInput.value);
+            const R = sizeInInches * PPI;
+            const hexWidth = Math.sqrt(3) * R;
+            const vertDist = 1.5 * R;
+            const w2 = hexWidth / 2;
+            const r2 = R / 2;
+            const points = [`0,-${R}`, `${w2},-${r2}`, `${w2},${r2}`, `0,${R}`, `-${w2},${r2}`, `-${w2},-${r2}`].join(' ');
+
+            // Parse hexes
+            for (let i = 2; i < lines.length; i++) {
+                const parts = lines[i].split(',');
+                if (parts.length < 3) continue;
+
+                const r = parseInt(parts[0]);
+                const c = parseInt(parts[1]);
+                const terrain = parts[2].trim();
+
+                let x = c * hexWidth;
+                let y = r * vertDist;
+                if (r % 2 !== 0) x += hexWidth / 2;
+
+                const polygon = document.createElementNS("http://www.w3.org/2000/svg", "polygon");
+                polygon.setAttribute("points", points);
+                polygon.setAttribute("transform", `translate(${x}, ${y})`);
+                polygon.setAttribute("class", `hex ${terrain}`);
+                polygon.setAttribute("data-row", r);
+                polygon.setAttribute("data-col", c);
+
+                svgGrid.appendChild(polygon);
+            }
+
+            // Sync visual zoom/footprint
+            updateZoom();
+            csvUpload.value = ''; // Reset input
+        };
+        reader.readAsText(file);
+    });
 
 });

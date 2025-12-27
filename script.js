@@ -1186,7 +1186,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 // Parts[3] is addon, Parts[4] is label
                 const addon = parts[3] ? parts[3].trim() : '';
-                const label = parts[4] !== undefined ? parts[4].trim() : undefined;
+                // Default to empty string if missing, so we don't auto-apply default labels
+                const label = parts[4] !== undefined ? parts[4].trim() : '';
 
                 let x = c * hexWidth;
                 let y = r * vertDist;

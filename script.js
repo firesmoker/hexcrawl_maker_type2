@@ -11,6 +11,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const btnImport = document.getElementById('btn-import');
     const csvUpload = document.getElementById('csv-upload');
     const btnShowAddons = document.getElementById('btn-show-addons');
+    const btnRemoveAddon = document.getElementById('btn-remove-addon');
     const addonList = document.getElementById('addon-list');
 
     // Hex Selection Logic - Defined early to avoid ReferenceErrors during initial generation
@@ -381,13 +382,17 @@ document.addEventListener('DOMContentLoaded', () => {
         const currentAddon = hex.getAttribute('data-addon');
         const currentLabel = hex.getAttribute('data-label') || '';
 
-        // Show/Hide Label input based on addon presence
+        // Show/Hide Add/Remove based on addon presence
         if (currentAddon) {
             addonLabelContainer.classList.add('visible');
             hexLabelInput.value = currentLabel;
+            btnShowAddons.classList.add('hidden');
+            btnRemoveAddon.classList.remove('hidden');
         } else {
             addonLabelContainer.classList.remove('visible');
             hexLabelInput.value = '';
+            btnShowAddons.classList.remove('hidden');
+            btnRemoveAddon.classList.add('hidden');
         }
 
         allTerrains.forEach(terrain => {
@@ -465,6 +470,12 @@ document.addEventListener('DOMContentLoaded', () => {
         popup.style.left = `${popupLeft}px`;
         popup.style.top = `${popupTop}px`;
     }
+
+    btnRemoveAddon.addEventListener('click', (e) => {
+        e.stopPropagation();
+        selectedHexes.forEach(h => updateAddonDisplay(h, null));
+        closePopup();
+    });
 
     btnShowAddons.addEventListener('click', (e) => {
         e.stopPropagation();

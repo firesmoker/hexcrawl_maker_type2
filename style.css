@@ -394,8 +394,8 @@ input[type=range]::-webkit-slider-thumb:hover {
     animation: fadeIn 0.2s ease;
 }
 
-.hex-popup.hidden {
-    display: none;
+.hidden {
+    display: none !important;
     opacity: 0;
     pointer-events: none;
 }
@@ -461,19 +461,34 @@ input[type=range]::-webkit-slider-thumb:hover {
     border-color: var(--accent-color);
 }
 
-.btn-add-ons {
+.btn-add-ons,
+.btn-remove-addon {
     position: absolute;
     top: 0.8rem;
     right: 0.8rem;
-    background: var(--accent-color);
-    color: white;
     border: none;
-    padding: 0.2rem 0.5rem;
+    padding: 0.2rem 0.6rem;
     border-radius: 4px;
     font-size: 0.7rem;
     font-weight: 600;
     cursor: pointer;
-    transition: transform 0.2s;
+    transition: transform 0.2s, background 0.2s;
+}
+
+.btn-add-ons {
+    background: var(--accent-color);
+    color: white;
+}
+
+.btn-remove-addon {
+    background: rgba(255, 82, 82, 0.2);
+    color: #ff5252;
+    border: 1px solid rgba(255, 82, 82, 0.5);
+}
+
+.btn-remove-addon:hover {
+    background: rgba(255, 82, 82, 0.4);
+    transform: scale(1.05);
 }
 
 .btn-add-ons:hover {

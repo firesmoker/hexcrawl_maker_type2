@@ -346,6 +346,57 @@ input[type=range]::-webkit-slider-thumb:hover {
         radial-gradient(circle at 10% 20%, rgba(141, 110, 99, 0.05) 0%, transparent 20%),
         radial-gradient(circle at 90% 80%, rgba(141, 110, 99, 0.05) 0%, transparent 20%);
     overflow: auto;
+    position: relative;
+}
+
+/* Vertical Zoom Widget */
+.vertical-zoom-widget {
+    position: sticky;
+    top: 50%;
+    transform: translateY(-50%);
+    left: 1rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.8rem;
+    padding: 1rem 0.6rem;
+    background: var(--bg-panel);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid var(--border-color);
+    border-radius: 20px;
+    box-shadow: 0 4px 20px rgba(62, 39, 35, 0.15);
+    z-index: 50;
+    margin-right: 1.5rem;
+    flex-shrink: 0;
+}
+
+.zoom-icon {
+    color: var(--accent-color);
+    opacity: 0.8;
+    transition: all 0.3s ease;
+}
+
+.vertical-zoom-widget:hover .zoom-icon {
+    opacity: 1;
+    transform: scale(1.1);
+}
+
+.vertical-zoom-widget input[type="range"] {
+    writing-mode: bt-lr;
+    appearance: slider-vertical;
+    -webkit-appearance: slider-vertical;
+    width: 6px;
+    height: 150px;
+    accent-color: var(--accent-color);
+}
+
+.zoom-value {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--accent-color);
+    min-width: 40px;
+    text-align: center;
 }
 
 #page-wrapper {

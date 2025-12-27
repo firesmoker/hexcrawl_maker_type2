@@ -52,36 +52,66 @@
         <div class="control-group">
             <div class="control-label">Terrain Types</div>
             <div class="terrain-options">
-                <label class="checkbox-container">
-                    <input type="checkbox" name="terrain" value="sea" checked>
-                    <span class="checkmark"></span>
-                    Sea
-                </label>
-                <label class="checkbox-container">
-                    <input type="checkbox" name="terrain" value="plains" checked>
-                    <span class="checkmark"></span>
-                    Plains
-                </label>
-                <label class="checkbox-container">
-                    <input type="checkbox" name="terrain" value="swamp" checked>
-                    <span class="checkmark"></span>
-                    Swamp
-                </label>
-                <label class="checkbox-container">
-                    <input type="checkbox" name="terrain" value="snow" checked>
-                    <span class="checkmark"></span>
-                    Snow
-                </label>
-                <label class="checkbox-container">
-                    <input type="checkbox" name="terrain" value="desert" checked>
-                    <span class="checkmark"></span>
-                    Desert
-                </label>
-                <label class="checkbox-container">
-                    <input type="checkbox" name="terrain" value="wasteland" checked>
-                    <span class="checkmark"></span>
-                    Wasteland
-                </label>
+                <div class="terrain-row">
+                    <label class="checkbox-container">
+                        <input type="checkbox" name="terrain" value="sea" checked>
+                        <span class="checkmark"></span>
+                        Sea
+                    </label>
+                    <input type="range" class="terrain-weight" data-terrain="sea" min="1" max="100" value="50"
+                        title="Probability Weight">
+                    <span class="weight-val">50%</span>
+                </div>
+                <div class="terrain-row">
+                    <label class="checkbox-container">
+                        <input type="checkbox" name="terrain" value="plains" checked>
+                        <span class="checkmark"></span>
+                        Plains
+                    </label>
+                    <input type="range" class="terrain-weight" data-terrain="plains" min="1" max="100" value="50"
+                        title="Probability Weight">
+                    <span class="weight-val">50%</span>
+                </div>
+                <div class="terrain-row">
+                    <label class="checkbox-container">
+                        <input type="checkbox" name="terrain" value="swamp" checked>
+                        <span class="checkmark"></span>
+                        Swamp
+                    </label>
+                    <input type="range" class="terrain-weight" data-terrain="swamp" min="1" max="100" value="50"
+                        title="Probability Weight">
+                    <span class="weight-val">50%</span>
+                </div>
+                <div class="terrain-row">
+                    <label class="checkbox-container">
+                        <input type="checkbox" name="terrain" value="snow" checked>
+                        <span class="checkmark"></span>
+                        Snow
+                    </label>
+                    <input type="range" class="terrain-weight" data-terrain="snow" min="1" max="100" value="50"
+                        title="Probability Weight">
+                    <span class="weight-val">50%</span>
+                </div>
+                <div class="terrain-row">
+                    <label class="checkbox-container">
+                        <input type="checkbox" name="terrain" value="desert" checked>
+                        <span class="checkmark"></span>
+                        Desert
+                    </label>
+                    <input type="range" class="terrain-weight" data-terrain="desert" min="1" max="100" value="50"
+                        title="Probability Weight">
+                    <span class="weight-val">50%</span>
+                </div>
+                <div class="terrain-row">
+                    <label class="checkbox-container">
+                        <input type="checkbox" name="terrain" value="wasteland" checked>
+                        <span class="checkmark"></span>
+                        Wasteland
+                    </label>
+                    <input type="range" class="terrain-weight" data-terrain="wasteland" min="1" max="100" value="50"
+                        title="Probability Weight">
+                    <span class="weight-val">50%</span>
+                </div>
             </div>
         </div>
 

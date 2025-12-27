@@ -33,15 +33,46 @@ document.addEventListener('DOMContentLoaded', () => {
         clusteringVal.textContent = `${Math.round(clusteringInput.value * 100)}%`;
     });
 
+    const terrainWeights = document.querySelectorAll('.terrain-weight');
+    terrainWeights.forEach(input => {
+        // Initialize with %
+        const span = input.nextElementSibling;
+        if (span && span.classList.contains('weight-val')) {
+            span.textContent = `${input.value}%`;
+        }
+
+        input.addEventListener('input', (e) => {
+            const span = e.target.nextElementSibling;
+            if (span && span.classList.contains('weight-val')) {
+                span.textContent = `${e.target.value}%`;
+            }
+        });
+    });
+
     function generateGrid() {
         // Clear existing
         svgGrid.innerHTML = '';
 
-        // Get selected terrains
+        // Get selected terrains and weights
         const checkboxes = document.querySelectorAll('input[name="terrain"]:checked');
-        const selectedTerrains = Array.from(checkboxes).map(cb => cb.value);
+        const weightedPool = [];
 
-        if (selectedTerrains.length === 0) {
+        checkboxes.forEach(cb => {
+            const terrain = cb.value;
+            // Find associated slider
+            // We can find it by finding the parent .terrain-row then the input
+            // Or selection by data-terrain attribute
+            const range = document.querySelector(`input.terrain-weight[data-terrain="${terrain}"]`);
+            const weight = range ? parseInt(range.value, 10) : 50; // default 50
+
+            // Add to pool 'weight' times? Or better use CDF. 
+            // For simple implementation (weight 1-100), adding to array is fine (max 600 items), very fast lookup.
+            for (let i = 0; i < weight; i++) {
+                weightedPool.push(terrain);
+            }
+        });
+
+        if (weightedPool.length === 0) {
             alert("Please select at least one terrain type.");
             return;
         }
@@ -131,8 +162,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     // Pick a random neighbor
                     terrain = neighbors[Math.floor(Math.random() * neighbors.length)];
                 } else {
-                    // Pure random
-                    terrain = selectedTerrains[Math.floor(Math.random() * selectedTerrains.length)];
+                    // Weighted random
+                    terrain = weightedPool[Math.floor(Math.random() * weightedPool.length)];
                 }
 
                 gridTerrains[`${row},${col}`] = terrain;

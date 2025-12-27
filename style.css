@@ -41,6 +41,8 @@ body {
     gap: 2rem;
     z-index: 10;
     box-shadow: 5px 0 20px rgba(62, 39, 35, 0.1);
+    height: 100vh;
+    overflow-y: auto;
 }
 
 .brand {
@@ -171,10 +173,18 @@ input[type=range]::-webkit-slider-thumb:hover {
 }
 
 /* Checkbox Styling */
+/* Checkbox Styling */
 .terrain-options {
     display: flex;
-    flex-wrap: wrap;
-    gap: 0.5rem;
+    flex-direction: column;
+    gap: 0.8rem;
+}
+
+.terrain-row {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    width: 100%;
 }
 
 .checkbox-container {
@@ -182,12 +192,35 @@ input[type=range]::-webkit-slider-thumb:hover {
     align-items: center;
     position: relative;
     padding-left: 25px;
-    margin-bottom: 5px;
     cursor: pointer;
     font-size: 0.9rem;
     user-select: none;
-    width: 45%;
     color: var(--text-secondary);
+    min-width: 100px;
+    /* Fixed width for label part */
+}
+
+.terrain-weight {
+    position: static !important;
+    /* Override generic absolute positioning */
+    flex: 1;
+    height: 6px;
+    margin-left: 0.5rem;
+    background: rgba(62, 39, 35, 0.1);
+    /* Track color (darker for parchment) */
+    border-radius: 3px;
+    -webkit-appearance: none;
+    appearance: none;
+    cursor: pointer;
+}
+
+.weight-val {
+    font-size: 0.8rem;
+    color: var(--accent-color);
+    font-weight: 600;
+    width: 40px;
+    text-align: right;
+    margin-left: 0.5rem;
 }
 
 .checkbox-container input {

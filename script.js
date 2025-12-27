@@ -31,8 +31,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
     let currentTool = 'select'; // 'select', 'road', 'river'
     let isPaintingPath = false;
-    let currentPathPolyline = null;
+    let currentPathElement = null; // Renamed from Polyline
     let currentPathHexes = [];
+    let currentPixelPoints = []; // To store {x,y} for smoothing calculation
 
     function setTool(tool) {
         currentTool = tool;
@@ -46,6 +47,31 @@ document.addEventListener('DOMContentLoaded', () => {
         if (tool === 'road') toolRoad.classList.add('active');
         if (tool === 'river') toolRiver.classList.add('active');
         closePopup();
+    }
+
+    // Path Smoothing Helper (Quadratic Bezier)
+    function getSmoothPathD(points) {
+        if (points.length === 0) return '';
+        if (points.length === 1) return `M ${points[0].x},${points[0].y}`;
+        if (points.length === 2) return `M ${points[0].x},${points[0].y} L ${points[1].x},${points[1].y}`;
+
+        let d = `M ${points[0].x},${points[0].y}`;
+
+        // Loop to n-1
+        for (let i = 1; i < points.length - 1; i++) {
+            const p1 = points[i];
+            const p2 = points[i + 1];
+            // Midpoint between p1 and p2
+            const midX = (p1.x + p2.x) / 2;
+            const midY = (p1.y + p2.y) / 2;
+            // Quad curve: Control point is p1, end point is mid
+            d += ` Q ${p1.x},${p1.y} ${midX},${midY}`;
+        }
+
+        // Line to the very last point
+        const last = points[points.length - 1];
+        d += ` L ${last.x},${last.y}`;
+        return d;
     }
 
     toolSelect.addEventListener('click', () => setTool('select'));
@@ -185,14 +211,14 @@ document.addEventListener('DOMContentLoaded', () => {
                 let x = c * hexWidth;
                 let y = r * vertDist;
                 if (r % 2 !== 0) x += hexWidth / 2;
-                points.push(`${x},${y}`);
+                points.push({ x: x, y: y });
             });
 
-            const poly = document.createElementNS("http://www.w3.org/2000/svg", "polyline");
-            poly.setAttribute("points", points.join(' '));
-            poly.setAttribute("class", `map-path ${p.type}`);
-            poly.setAttribute("data-hex-path", p.nodes);
-            pathLayer.appendChild(poly);
+            const pathEl = document.createElementNS("http://www.w3.org/2000/svg", "path");
+            pathEl.setAttribute("d", getSmoothPathD(points));
+            pathEl.setAttribute("class", `map-path ${p.type}`);
+            pathEl.setAttribute("data-hex-path", p.nodes);
+            pathLayer.appendChild(pathEl);
         });
     }
 
@@ -799,6 +825,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 isPaintingPath = true;
                 isMouseDown = true;
                 currentPathHexes = [];
+                currentPixelPoints = [];
 
                 const r = target.getAttribute('data-row');
                 const c = target.getAttribute('data-col');
@@ -807,13 +834,15 @@ document.addEventListener('DOMContentLoaded', () => {
                 const transform = target.getAttribute('transform');
                 const match = /translate\(([^,]+),\s*([^)]+)\)/.exec(transform);
                 if (match) {
-                    const x = match[1];
-                    const y = match[2];
-                    const poly = document.createElementNS("http://www.w3.org/2000/svg", "polyline");
-                    poly.setAttribute("points", `${x},${y}`);
-                    poly.setAttribute("class", `map-path path-${currentTool}`);
-                    pathLayer.appendChild(poly);
-                    currentPathPolyline = poly;
+                    const x = parseFloat(match[1]);
+                    const y = parseFloat(match[2]);
+                    currentPixelPoints.push({ x, y });
+
+                    const pathEl = document.createElementNS("http://www.w3.org/2000/svg", "path");
+                    pathEl.setAttribute("d", `M ${x},${y}`);
+                    pathEl.setAttribute("class", `map-path path-${currentTool}`);
+                    pathLayer.appendChild(pathEl);
+                    currentPathElement = pathEl;
                 }
             }
             return;
@@ -838,11 +867,15 @@ document.addEventListener('DOMContentLoaded', () => {
 
                     const transform = e.target.getAttribute('transform');
                     const match = /translate\(([^,]+),\s*([^)]+)\)/.exec(transform);
-                    if (match && currentPathPolyline) {
-                        const x = match[1];
-                        const y = match[2];
-                        const currentPoints = currentPathPolyline.getAttribute('points');
-                        currentPathPolyline.setAttribute('points', `${currentPoints} ${x},${y}`);
+                    if (match && currentPathElement) {
+                        const x = parseFloat(match[1]);
+                        const y = parseFloat(match[2]);
+
+                        currentPixelPoints.push({ x, y });
+
+                        // Recalculate smooth path
+                        const newD = getSmoothPathD(currentPixelPoints);
+                        currentPathElement.setAttribute('d', newD);
                     }
                 }
             }
@@ -885,11 +918,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
         if (isPaintingPath) {
             isPaintingPath = false;
-            if (currentPathPolyline) {
-                currentPathPolyline.setAttribute('data-hex-path', currentPathHexes.join(';'));
+            if (currentPathElement) {
+                currentPathElement.setAttribute('data-hex-path', currentPathHexes.join(';'));
                 saveHistory();
             }
-            currentPathPolyline = null;
+            currentPathElement = null;
             return;
         }
 

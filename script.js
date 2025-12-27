@@ -4,6 +4,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const btnGenerate = document.getElementById('btn-generate');
     const svgGrid = document.getElementById('hex-grid');
     const pageContainer = document.getElementById('page-container');
+    const pageWrapper = document.getElementById('page-wrapper');
     const autoApplyInput = document.getElementById('auto-apply-hex');
     const btnSelectCluster = document.getElementById('btn-select-cluster');
 
@@ -39,6 +40,13 @@ document.addEventListener('DOMContentLoaded', () => {
         const scale = parseFloat(zoomInput.value);
         zoomVal.textContent = `${Math.round(scale * 100)}%`;
         pageContainer.style.transform = `scale(${scale})`;
+
+        // Update the wrapper footprint to correctly recalculate scrollbars
+        // A4: 210mm x 297mm
+        const baseWidth = pageContainer.offsetWidth;
+        const baseHeight = pageContainer.offsetHeight;
+        pageWrapper.style.width = (baseWidth * scale) + 'px';
+        pageWrapper.style.height = (baseHeight * scale) + 'px';
     }
 
     zoomInput.addEventListener('input', updateZoom);

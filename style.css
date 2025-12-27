@@ -274,8 +274,8 @@ input[type=range]::-webkit-slider-thumb:hover {
 .main-content {
     flex: 1;
     display: flex;
-    /* justify-content: center; */
-    /* align-items: center; */
+    justify-content: center;
+    align-items: flex-start;
     padding: 2rem;
     background-image:
         radial-gradient(circle at 10% 20%, rgba(141, 110, 99, 0.05) 0%, transparent 20%),
@@ -283,11 +283,15 @@ input[type=range]::-webkit-slider-thumb:hover {
     overflow: auto;
 }
 
+#page-wrapper {
+    margin: auto;
+    flex-shrink: 0;
+}
+
 /* A4 Page Container */
 .page-container {
     width: 210mm;
     height: 297mm;
-    margin: auto;
     background: #fffdf5;
     /* Warmer paper color */
     box-shadow: var(--shadow-paper);
@@ -295,7 +299,7 @@ input[type=range]::-webkit-slider-thumb:hover {
     overflow: hidden;
     /* Ensure it scales down on smaller screens if needed, though scroll is better for "making" mechanics */
     flex-shrink: 0;
-    transform-origin: center top;
+    transform-origin: 0 0;
     transition: transform 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94);
 }
 

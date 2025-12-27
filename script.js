@@ -341,14 +341,15 @@ document.addEventListener('DOMContentLoaded', () => {
                 const y = parseFloat(match[2]);
                 openPopup(target, x, y);
             }
-        } else {
-            closePopup();
         }
     });
 
-    // Close on zoom or scroll might be tricky, but basic click-away covers most
-    pageContainer.addEventListener('click', (e) => {
-        if (e.target === pageContainer || e.target.id === 'hex-grid') {
+    // Close on click-away (anywhere that isn't a hex or the popup itself)
+    document.addEventListener('click', (e) => {
+        const isHex = e.target.classList.contains('hex');
+        const isInsidePopup = popup.contains(e.target);
+
+        if (!isHex && !isInsidePopup) {
             closePopup();
         }
     });

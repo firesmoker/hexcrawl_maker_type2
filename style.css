@@ -421,6 +421,54 @@ input[type=range]::-webkit-slider-thumb:hover {
     letter-spacing: 0.05em;
     border-bottom: 1px solid var(--border-color);
     padding-bottom: 0.4rem;
+    padding-right: 3rem;
+    /* Space for the add button */
+}
+
+.btn-add-ons {
+    position: absolute;
+    top: 0.8rem;
+    right: 0.8rem;
+    background: var(--accent-color);
+    color: white;
+    border: none;
+    padding: 0.2rem 0.5rem;
+    border-radius: 4px;
+    font-size: 0.7rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: transform 0.2s;
+}
+
+.btn-add-ons:hover {
+    transform: scale(1.05);
+    filter: brightness(1.1);
+}
+
+.addon-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    max-height: 250px;
+    overflow-y: auto;
+}
+
+.addon-item {
+    padding: 0.3rem 0.5rem;
+    font-size: 0.8rem;
+    color: white;
+    cursor: pointer;
+    border-radius: 2px;
+}
+
+.addon-item:hover {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.addon-item.clear {
+    color: #ff5252;
+    border-top: 1px solid var(--border-color);
+    margin-top: 0.2rem;
 }
 
 .btn-cluster {

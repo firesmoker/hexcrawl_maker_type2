@@ -141,10 +141,18 @@
 
     <!-- Context Menu / Popup moved to body level -->
     <div id="hex-popup" class="hex-popup hidden">
-        <div class="popup-title">Edit Hex</div>
+        <div class="popup-title" id="popup-title">Edit Hex</div>
+        <button id="btn-show-addons" class="btn-add-ons">+ Add...</button>
         <button id="btn-select-cluster" class="btn-cluster">Select Cluster</button>
         <div class="popup-options" id="popup-options">
-            <!-- Options injected via JS -->
+            <!-- Terrain options injected via JS -->
+        </div>
+    </div>
+
+    <div id="addon-popup" class="hex-popup hidden">
+        <div class="popup-title">Select Add-on</div>
+        <div id="addon-list" class="addon-list">
+            <!-- Addons injected via JS -->
         </div>
     </div>
 

@@ -10,20 +10,57 @@ document.addEventListener('DOMContentLoaded', () => {
     const btnExport = document.getElementById('btn-export');
     const btnImport = document.getElementById('btn-import');
     const csvUpload = document.getElementById('csv-upload');
+    const btnShowAddons = document.getElementById('btn-show-addons');
+    const addonList = document.getElementById('addon-list');
 
     // Hex Selection Logic - Defined early to avoid ReferenceErrors during initial generation
     const popup = document.getElementById('hex-popup');
+    const addonPopup = document.getElementById('addon-popup');
+    const popupTitle = document.getElementById('popup-title');
     const popupOptions = document.getElementById('popup-options');
     let selectedHexes = [];
     const allTerrains = ['sea', 'plains', 'swamp', 'snow', 'desert', 'wasteland'];
+    const allAddons = ['Town', 'City', 'Dungeon', 'Tower', 'Mountain', 'Encampment'];
 
     function closePopup() {
-        if (!popup) return;
-        popup.classList.add('hidden');
+        if (popup) popup.classList.add('hidden');
+        if (addonPopup) addonPopup.classList.add('hidden');
         selectedHexes.forEach(h => {
             h.classList.remove('selected');
         });
         selectedHexes = [];
+    }
+
+    // Helper to add/update text on a hex
+    function updateAddonDisplay(hex, text) {
+        const row = hex.getAttribute('data-row');
+        const col = hex.getAttribute('data-col');
+
+        // Remove existing text if any
+        const existingText = svgGrid.querySelector(`text[data-row="${row}"][data-col="${col}"]`);
+        if (existingText) existingText.remove();
+
+        if (!text || text === 'None') {
+            hex.removeAttribute('data-addon');
+            return;
+        }
+
+        hex.setAttribute('data-addon', text);
+
+        // Position it based on the hex transform
+        const transform = hex.getAttribute('transform');
+        const textNode = document.createElementNS("http://www.w3.org/2000/svg", "text");
+        textNode.setAttribute("transform", transform);
+        textNode.setAttribute("data-row", row);
+        textNode.setAttribute("data-col", col);
+        textNode.setAttribute("text-anchor", "middle");
+        textNode.setAttribute("dominant-baseline", "central");
+        textNode.setAttribute("fill", "black");
+        textNode.setAttribute("pointer-events", "none");
+        textNode.setAttribute("style", "font-weight: 700; font-family: 'Outfit', sans-serif; font-size: 10px; text-shadow: 0 0 2px white;");
+        textNode.textContent = text;
+
+        svgGrid.appendChild(textNode);
     }
 
     // Constants for A4 at 96 DPI (Web standard for "inch")
@@ -313,9 +350,9 @@ document.addEventListener('DOMContentLoaded', () => {
     function openPopup(hex, x, y) {
         closePopup();
         selectedHexes = [hex];
-        popupOptions.innerHTML = '';
 
-        // Improve Highlight
+
+        popupOptions.innerHTML = '';
         hex.classList.add('selected');
 
         const currentClass = hex.getAttribute('class').replace('hex', '').replace('selected', '').trim();
@@ -335,6 +372,30 @@ document.addEventListener('DOMContentLoaded', () => {
 
             popupOptions.appendChild(opt);
         });
+
+        // Initialize Addon List
+        addonList.innerHTML = '';
+        allAddons.forEach(addon => {
+            const item = document.createElement('div');
+            item.className = 'addon-item';
+            item.textContent = addon;
+            item.addEventListener('click', (e) => {
+                e.stopPropagation();
+                selectedHexes.forEach(h => updateAddonDisplay(h, addon));
+                closePopup();
+            });
+            addonList.appendChild(item);
+        });
+
+        const clearItem = document.createElement('div');
+        clearItem.className = 'addon-item clear';
+        clearItem.textContent = 'None / Clear';
+        clearItem.addEventListener('click', (e) => {
+            e.stopPropagation();
+            selectedHexes.forEach(h => updateAddonDisplay(h, null));
+            closePopup();
+        });
+        addonList.appendChild(clearItem);
 
         popup.classList.remove('hidden');
 
@@ -367,6 +428,20 @@ document.addEventListener('DOMContentLoaded', () => {
         popup.style.left = `${popupLeft}px`;
         popup.style.top = `${popupTop}px`;
     }
+
+    btnShowAddons.addEventListener('click', (e) => {
+        e.stopPropagation();
+
+        // Capture position of current popup before hiding
+        const top = popup.style.top;
+        const left = popup.style.left;
+
+        popup.classList.add('hidden');
+
+        addonPopup.style.top = top;
+        addonPopup.style.left = left;
+        addonPopup.classList.remove('hidden');
+    });
 
     function getCluster(startHex) {
         const row = parseInt(startHex.getAttribute('data-row'));
@@ -434,7 +509,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Close on click-away (anywhere that isn't a hex or the popup itself)
     document.addEventListener('click', (e) => {
         const isHex = e.target.classList.contains('hex');
-        const isInsidePopup = popup.contains(e.target);
+        const isInsidePopup = popup.contains(e.target) || addonPopup.contains(e.target);
 
         if (!isHex && !isInsidePopup) {
             closePopup();
@@ -447,14 +522,15 @@ document.addEventListener('DOMContentLoaded', () => {
     // CSV Export
     btnExport.addEventListener('click', () => {
         let csvContent = `metadata,hexSize,${hexSizeInput.value}\n`;
-        csvContent += `row,col,terrain\n`;
+        csvContent += `row,col,terrain,addon\n`;
 
         const hexes = svgGrid.querySelectorAll('.hex');
         hexes.forEach(hex => {
             const r = hex.getAttribute('data-row');
             const c = hex.getAttribute('data-col');
             const terrain = hex.getAttribute('class').replace('hex', '').replace('selected', '').trim();
-            csvContent += `${r},${c},${terrain}\n`;
+            const addon = hex.getAttribute('data-addon') || '';
+            csvContent += `${r},${c},${terrain},${addon}\n`;
         });
 
         const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
@@ -510,6 +586,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 const r = parseInt(parts[0]);
                 const c = parseInt(parts[1]);
                 const terrain = parts[2].trim();
+                const addon = parts[3] ? parts[3].trim() : '';
 
                 let x = c * hexWidth;
                 let y = r * vertDist;
@@ -521,8 +598,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 polygon.setAttribute("class", `hex ${terrain}`);
                 polygon.setAttribute("data-row", r);
                 polygon.setAttribute("data-col", c);
+                if (addon) polygon.setAttribute("data-addon", addon);
 
                 svgGrid.appendChild(polygon);
+                if (addon) updateAddonDisplay(polygon, addon);
             }
 
             // Sync visual zoom/footprint

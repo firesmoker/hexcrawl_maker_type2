@@ -585,9 +585,19 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (hexType === type) {
                     cluster.push(hexEl);
 
-                    // Neighbors logic
+                    // Neighbors logic - Corrected offsets for hex-grid
+                    // Even row: (r, c-1), (r, c+1), (r-1, c-1), (r-1, c), (r+1, c-1), (r+1, c)
+                    // Odd row:  (r, c-1), (r, c+1), (r-1, c), (r-1, c+1), (r+1, c), (r+1, c+1)
+                    // Wait, previous logic had a typo: [r-1, r] should be [r-1, c] in even row logic above?
+
+                    // Standard odd-r offsets (if row 0 is even offset, row 1 is odd offset)
+                    // Wait, let's verify offset convention.
+                    // Typically 'odd-r' layout:
+                    // Even Row (0): -1,-1 | -1, 0
+                    // Odd Row (1):  -1, 0 | -1, +1
+
                     const nCoords = (r % 2 === 0)
-                        ? [[r, c - 1], [r, c + 1], [r - 1, c - 1], [r - 1, r], [r + 1, c - 1], [r + 1, c]]
+                        ? [[r, c - 1], [r, c + 1], [r - 1, c - 1], [r - 1, c], [r + 1, c - 1], [r + 1, c]]
                         : [[r, c - 1], [r, c + 1], [r - 1, c], [r - 1, c + 1], [r + 1, c], [r + 1, c + 1]];
 
                     nCoords.forEach(([nr, nc]) => {

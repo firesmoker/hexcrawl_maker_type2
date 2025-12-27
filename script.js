@@ -340,8 +340,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Initial Generation
     generateGrid();
-    // Initial Generation
-    generateGrid();
     updateZoom();
 
     // Hex Selection Logic section moved to top.
@@ -378,7 +376,11 @@ document.addEventListener('DOMContentLoaded', () => {
         allAddons.forEach(addon => {
             const item = document.createElement('div');
             item.className = 'addon-item';
-            item.textContent = addon;
+            const iconPath = `icons/${addon.toLowerCase()}.svg`;
+            item.innerHTML = `
+                <img src="${iconPath}" class="addon-icon" alt="${addon}">
+                <span>${addon}</span>
+            `;
             item.addEventListener('click', (e) => {
                 e.stopPropagation();
                 selectedHexes.forEach(h => updateAddonDisplay(h, addon));

@@ -337,20 +337,29 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Positioning logic - using viewport coordinates (fixed positioning)
         const rect = hex.getBoundingClientRect();
+        const popupWidth = popup.offsetWidth;
+        const popupHeight = popup.offsetHeight;
 
-        // Position to the right of the hex
+        // Default position: to the right of the hex
         let popupLeft = rect.right + 10;
         let popupTop = rect.top;
 
-        // Boundary check: If it goes off the right edge, move to the left
-        if (popupLeft + 200 > window.innerWidth) {
-            popupLeft = rect.left - 210;
+        // Boundary check: If it goes off the right edge, move to the left of the hex
+        if (popupLeft + popupWidth > window.innerWidth) {
+            popupLeft = rect.left - popupWidth - 10;
         }
 
-        // Boundary check: Bottom edge
-        if (popupTop + 250 > window.innerHeight) {
-            popupTop = window.innerHeight - 260;
+        // Boundary check: If it still goes off the left edge (very small screen), pin to left
+        if (popupLeft < 10) popupLeft = 10;
+
+        // Boundary check: Bottom edge - if it would crop, flip upwards
+        if (popupTop + popupHeight > window.innerHeight) {
+            // Align the bottom of the popup with the bottom of the hex
+            popupTop = rect.bottom - popupHeight;
         }
+
+        // Boundary check: Top edge safety
+        if (popupTop < 10) popupTop = 10;
 
         popup.style.left = `${popupLeft}px`;
         popup.style.top = `${popupTop}px`;

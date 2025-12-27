@@ -650,6 +650,17 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
+    hexLayer.addEventListener('mouseout', (e) => {
+        if (e.target.classList.contains('hex')) {
+            // When leaving any hex, ensure selected hexes remain on top so their borders aren't covered
+            if (selectedHexes.length > 0) {
+                selectedHexes.forEach(h => {
+                    h.parentElement.appendChild(h);
+                });
+            }
+        }
+    });
+
     document.addEventListener('mouseup', (e) => {
         isMouseDown = false;
         if (isDragging) {

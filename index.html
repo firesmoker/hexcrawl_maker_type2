@@ -48,16 +48,20 @@
             <div class="control-label">Terrain Types</div>
             <div class="terrain-options">
                 <div class="terrain-row">
+                    <input type="color" class="terrain-color-picker" data-terrain="sea" value="#4fc3f7"
+                        title="Change Sea Color">
                     <label class="checkbox-container">
                         <input type="checkbox" name="terrain" value="sea" checked>
                         <span class="checkmark"></span>
                         Sea
                     </label>
-                    <input type="range" class="terrain-weight" data-terrain="sea" min="1" max="100" value="100"
+                    <input type="range" class="terrain-weight" data-terrain="sea" min="1" max="100" value="10"
                         title="Probability Weight">
-                    <span class="weight-val">100%</span>
+                    <span class="weight-val">10%</span>
                 </div>
                 <div class="terrain-row">
+                    <input type="color" class="terrain-color-picker" data-terrain="plains" value="#aed581"
+                        title="Change Plains Color">
                     <label class="checkbox-container">
                         <input type="checkbox" name="terrain" value="plains" checked>
                         <span class="checkmark"></span>
@@ -68,6 +72,8 @@
                     <span class="weight-val">100%</span>
                 </div>
                 <div class="terrain-row">
+                    <input type="color" class="terrain-color-picker" data-terrain="swamp" value="#6d4c41"
+                        title="Change Swamp Color">
                     <label class="checkbox-container">
                         <input type="checkbox" name="terrain" value="swamp" checked>
                         <span class="checkmark"></span>
@@ -78,6 +84,8 @@
                     <span class="weight-val">10%</span>
                 </div>
                 <div class="terrain-row">
+                    <input type="color" class="terrain-color-picker" data-terrain="snow" value="#f5f5f5"
+                        title="Change Snow Color">
                     <label class="checkbox-container">
                         <input type="checkbox" name="terrain" value="snow" checked>
                         <span class="checkmark"></span>
@@ -88,6 +96,8 @@
                     <span class="weight-val">10%</span>
                 </div>
                 <div class="terrain-row">
+                    <input type="color" class="terrain-color-picker" data-terrain="desert" value="#fff59d"
+                        title="Change Desert Color">
                     <label class="checkbox-container">
                         <input type="checkbox" name="terrain" value="desert" checked>
                         <span class="checkmark"></span>
@@ -98,6 +108,8 @@
                     <span class="weight-val">20%</span>
                 </div>
                 <div class="terrain-row">
+                    <input type="color" class="terrain-color-picker" data-terrain="wasteland" value="#78909c"
+                        title="Change Wasteland Color">
                     <label class="checkbox-container">
                         <input type="checkbox" name="terrain" value="wasteland" checked>
                         <span class="checkmark"></span>
@@ -107,6 +119,36 @@
                         title="Probability Weight">
                     <span class="weight-val">10%</span>
                 </div>
+            </div>
+        </div>
+
+        <div class="control-group">
+            <div class="control-label">Map Tools</div>
+            <div class="tool-buttons">
+                <button id="tool-select" class="tool-btn active" title="Select / Edit (Click & Drag)">
+                    <svg viewBox="0 0 24 24" width="18" height="18">
+                        <path fill="currentColor" d="M7 2l12 11.2-5.8.5 3.3 7.3-2.2.9-3.2-7.4-4.4 4V2z" />
+                    </svg>
+                    <span>Select</span>
+                </button>
+                <button id="tool-road" class="tool-btn" title="Paint Road (Drag)">
+                    <svg viewBox="0 0 24 24" width="18" height="18">
+                        <path fill="currentColor"
+                            d="M18,4C13.5,4 9,8.5 9,13C9,17.5 4.5,22 0,22V20C3.5,20 7,16.5 7,13C7,9.5 11.5,5 16,5V4M18,2V4C22.5,4 27,8.5 27,13C27,17.5 22.5,22 18,22V20C21.5,20 25,16.5 25,13C25,9.5 20.5,5 16,5V2H18Z"
+                            transform="translate(-2,-2) scale(1.1)" />
+                        <!-- Simple dashed path representation -->
+                        <path d="M4 20 L20 4" stroke="currentColor" stroke-width="2" stroke-dasharray="4 2"
+                            fill="none" />
+                    </svg>
+                    <span>Road</span>
+                </button>
+                <button id="tool-river" class="tool-btn" title="Paint River (Drag)">
+                    <svg viewBox="0 0 24 24" width="18" height="18">
+                        <path fill="currentColor"
+                            d="M19.38 10.32C18.67 9.85 17.65 9.85 16.94 10.32L15.35 11.38C14.64 11.85 13.62 11.85 12.91 11.38L11.32 10.32C10.61 9.85 9.59 9.85 8.88 10.32L7.29 11.38C6.58 11.85 5.54 11.85 4.83 11.38L2 9.5V14.5L4.83 16.38C5.54 16.85 6.58 16.85 7.29 16.38L8.88 15.32C9.59 14.85 10.61 14.85 11.32 15.32L12.91 16.38C13.62 16.85 14.64 16.85 15.35 16.38L16.94 15.32C17.65 14.85 18.67 14.85 19.38 15.32L22 17.06V12.06L19.38 10.32Z" />
+                    </svg>
+                    <span>River</span>
+                </button>
             </div>
         </div>
 
@@ -126,6 +168,7 @@
             <div class="page-container" id="page-container">
                 <svg id="hex-grid" xmlns="http://www.w3.org/2000/svg">
                     <g id="hex-layer"></g>
+                    <g id="path-layer"></g>
                     <g id="addon-layer"></g>
                 </svg>
             </div>
@@ -185,6 +228,14 @@
         <div class="popup-title">Select Add-on</div>
         <div id="addon-list" class="addon-list">
             <!-- Addons injected via JS -->
+        </div>
+    </div>
+
+    <div id="path-popup" class="hex-popup hidden">
+        <div class="popup-title" id="path-popup-title">Selected Path</div>
+        <div class="popup-options">
+            <button id="btn-delete-path" class="btn-cluster" style="border-color: #ff5252; color: #ff5252;">Remove
+                Path</button>
         </div>
     </div>
 

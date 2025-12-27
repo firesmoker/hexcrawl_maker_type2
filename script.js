@@ -23,6 +23,35 @@ document.addEventListener('DOMContentLoaded', () => {
     let redoStack = [];
     const historyLimit = 50;
 
+    // Tools
+    const pathLayer = document.getElementById('path-layer');
+    const toolSelect = document.getElementById('tool-select');
+    const toolRoad = document.getElementById('tool-road');
+    const toolRiver = document.getElementById('tool-river');
+
+    let currentTool = 'select'; // 'select', 'road', 'river'
+    let isPaintingPath = false;
+    let currentPathPolyline = null;
+    let currentPathHexes = [];
+
+    function setTool(tool) {
+        currentTool = tool;
+        [toolSelect, toolRoad, toolRiver].forEach(btn => btn.classList.remove('active'));
+        if (tool === 'select') {
+            toolSelect.classList.add('active');
+            pathLayer.classList.add('interactive');
+        } else {
+            pathLayer.classList.remove('interactive');
+        }
+        if (tool === 'road') toolRoad.classList.add('active');
+        if (tool === 'river') toolRiver.classList.add('active');
+        closePopup();
+    }
+
+    toolSelect.addEventListener('click', () => setTool('select'));
+    toolRoad.addEventListener('click', () => setTool('road'));
+    toolRiver.addEventListener('click', () => setTool('river'));
+
     // Hex Selection Logic - Defined early to avoid ReferenceErrors during initial generation
     const popup = document.getElementById('hex-popup');
     const addonPopup = document.getElementById('addon-popup');
@@ -34,13 +63,23 @@ document.addEventListener('DOMContentLoaded', () => {
     const allTerrains = ['sea', 'plains', 'swamp', 'snow', 'desert', 'wasteland'];
     const allAddons = ['Town', 'City', 'Dungeon', 'Tower', 'Mountain', 'Encampment'];
 
+    const pathPopup = document.getElementById('path-popup');
+    const btnDeletePath = document.getElementById('btn-delete-path');
+    let selectedPath = null;
+
     function closePopup() {
         if (popup) popup.classList.add('hidden');
         if (addonPopup) addonPopup.classList.add('hidden');
+        if (pathPopup) pathPopup.classList.add('hidden');
         selectedHexes.forEach(h => {
             h.classList.remove('selected');
         });
         selectedHexes = [];
+
+        if (selectedPath) {
+            selectedPath.classList.remove('selected');
+            selectedPath = null;
+        }
     }
 
     function updateHistoryUI() {
@@ -58,9 +97,23 @@ document.addEventListener('DOMContentLoaded', () => {
             l: h.getAttribute('data-label') || ''
         }));
 
+        const pathData = Array.from(pathLayer.querySelectorAll('.map-path')).map(p => ({
+            type: p.getAttribute('class').replace('map-path', '').trim(),
+            nodes: p.getAttribute('data-hex-path')
+        }));
+
+        // Capture current colors
+        const colors = {};
+        allTerrains.forEach(t => {
+            colors[t] = getComputedStyle(document.documentElement).getPropertyValue(`--col-${t}`).trim();
+        });
+
         undoStack.push({
             hexSize: hexSizeInput.value,
-            hexes: hexData
+            hexSize: hexSizeInput.value,
+            hexes: hexData,
+            paths: pathData,
+            colors: colors
         });
 
         if (undoStack.length > historyLimit) {
@@ -73,6 +126,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function applyState(state) {
         if (!state) return;
+
+        // Restore colors if present in history
+        if (state.colors) {
+            Object.keys(state.colors).forEach(t => {
+                document.documentElement.style.setProperty(`--col-${t}`, state.colors[t]);
+                // Update picker input value to match
+                const picker = document.querySelector(`.terrain-color-picker[data-terrain="${t}"]`);
+                if (picker) picker.value = state.colors[t];
+            });
+        }
 
         const currentSize = hexSizeInput.value;
         if (state.hexSize !== currentSize) {
@@ -93,8 +156,44 @@ document.addEventListener('DOMContentLoaded', () => {
                     }
                 }
             });
+            generateGrid(state.hexes); // Force re-render to clear paths if needed? No, hot swap is better.
+            // Actually, we must restore paths here too
+            restorePaths(state.paths, state.hexSize);
+        }
+
+        if (state.hexSize === currentSize) {
+            restorePaths(state.paths, state.hexSize);
         }
         updateHistoryUI();
+    }
+
+    function restorePaths(pathsData, hexSize) {
+        pathLayer.innerHTML = '';
+        if (!pathsData) return;
+
+        const sizeInInches = parseFloat(hexSize);
+        const R = sizeInInches * PPI;
+        const hexWidth = Math.sqrt(3) * R;
+        const vertDist = 1.5 * R;
+
+        pathsData.forEach(p => {
+            if (!p.nodes) return;
+            const points = [];
+            const nodes = p.nodes.split(';');
+            nodes.forEach(node => {
+                const [r, c] = node.split(',').map(Number);
+                let x = c * hexWidth;
+                let y = r * vertDist;
+                if (r % 2 !== 0) x += hexWidth / 2;
+                points.push(`${x},${y}`);
+            });
+
+            const poly = document.createElementNS("http://www.w3.org/2000/svg", "polyline");
+            poly.setAttribute("points", points.join(' '));
+            poly.setAttribute("class", `map-path ${p.type}`);
+            poly.setAttribute("data-hex-path", p.nodes);
+            pathLayer.appendChild(poly);
+        });
     }
 
     function undo() {
@@ -118,6 +217,20 @@ document.addEventListener('DOMContentLoaded', () => {
         undoStack.push(nextState);
         applyState(nextState);
     }
+
+    // Color Pickers Logic
+    document.querySelectorAll('.terrain-color-picker').forEach(picker => {
+        // Update live as you drag
+        picker.addEventListener('input', (e) => {
+            const terrain = e.target.getAttribute('data-terrain');
+            document.documentElement.style.setProperty(`--col-${terrain}`, e.target.value);
+        });
+
+        // Save history on final change (release)
+        picker.addEventListener('change', (e) => {
+            saveHistory();
+        });
+    });
 
     // Helper to add/update addon (icon + text) on a hex
     function updateAddonDisplay(hex, addonType, customLabel) {
@@ -242,6 +355,7 @@ document.addEventListener('DOMContentLoaded', () => {
         closePopup();
         // Clear existing
         hexLayer.innerHTML = '';
+        pathLayer.innerHTML = '';
         addonLayer.innerHTML = '';
 
         // Get selected terrains and weights
@@ -391,6 +505,9 @@ document.addEventListener('DOMContentLoaded', () => {
             .hex.snow { fill: #f5f5f5; }
             .hex.desert { fill: #fff59d; }
             .hex.wasteland { fill: #78909c; }
+            .map-path { fill: none; stroke-linecap: round; stroke-linejoin: round; }
+            .path-road { stroke: #5d4037; stroke-width: 6px; }
+            .path-river { stroke: #29b6f6; stroke-width: 8px; opacity: 0.8; }
         `;
 
         // Inject style element
@@ -431,6 +548,8 @@ document.addEventListener('DOMContentLoaded', () => {
     // Initial Generation
     generateGrid();
     updateZoom();
+    // Set default tool state correctly
+    setTool('select');
 
     // Hex Selection Logic section moved to top.
 
@@ -619,6 +738,43 @@ document.addEventListener('DOMContentLoaded', () => {
         return cluster;
     }
 
+    function openPathPopup(path, mouseX, mouseY) {
+        closePopup();
+        selectedPath = path;
+        selectedPath.classList.add('selected');
+
+        pathPopup.classList.remove('hidden');
+
+        // Positioning logic (similar to hex popup)
+        const popupWidth = pathPopup.offsetWidth;
+        const popupHeight = pathPopup.offsetHeight;
+
+        let popupLeft = mouseX + 15;
+        let popupTop = mouseY - 15;
+
+        // Boundary checks
+        if (popupLeft + popupWidth > window.innerWidth) {
+            popupLeft = mouseX - popupWidth - 15;
+        }
+        if (popupLeft < 10) popupLeft = 10;
+
+        if (popupTop + popupHeight > window.innerHeight) {
+            popupTop = window.innerHeight - popupHeight - 10;
+        }
+        if (popupTop < 10) popupTop = 10;
+
+        pathPopup.style.left = `${popupLeft}px`;
+        pathPopup.style.top = `${popupTop}px`;
+    }
+
+    btnDeletePath.addEventListener('click', (e) => {
+        if (selectedPath) {
+            selectedPath.remove();
+            saveHistory();
+            closePopup();
+        }
+    });
+
     btnSelectCluster.addEventListener('click', (e) => {
         e.stopPropagation();
         if (selectedHexes.length > 0) {
@@ -637,6 +793,32 @@ document.addEventListener('DOMContentLoaded', () => {
     let ignoreNextClick = false;
 
     hexLayer.addEventListener('mousedown', (e) => {
+        if (currentTool !== 'select') {
+            const target = e.target;
+            if (target.classList.contains('hex')) {
+                isPaintingPath = true;
+                isMouseDown = true;
+                currentPathHexes = [];
+
+                const r = target.getAttribute('data-row');
+                const c = target.getAttribute('data-col');
+                currentPathHexes.push(`${r},${c}`);
+
+                const transform = target.getAttribute('transform');
+                const match = /translate\(([^,]+),\s*([^)]+)\)/.exec(transform);
+                if (match) {
+                    const x = match[1];
+                    const y = match[2];
+                    const poly = document.createElementNS("http://www.w3.org/2000/svg", "polyline");
+                    poly.setAttribute("points", `${x},${y}`);
+                    poly.setAttribute("class", `map-path path-${currentTool}`);
+                    pathLayer.appendChild(poly);
+                    currentPathPolyline = poly;
+                }
+            }
+            return;
+        }
+
         if (e.target.classList.contains('hex')) {
             isMouseDown = true;
             // Don't clear selection yet, wait to see if it's a drag or click
@@ -645,6 +827,27 @@ document.addEventListener('DOMContentLoaded', () => {
 
     hexLayer.addEventListener('mousemove', (e) => {
         if (!isMouseDown) return;
+
+        if (currentTool !== 'select') {
+            if (isPaintingPath && e.target.classList.contains('hex')) {
+                const r = e.target.getAttribute('data-row');
+                const c = e.target.getAttribute('data-col');
+                const last = currentPathHexes[currentPathHexes.length - 1];
+                if (last !== `${r},${c}`) {
+                    currentPathHexes.push(`${r},${c}`);
+
+                    const transform = e.target.getAttribute('transform');
+                    const match = /translate\(([^,]+),\s*([^)]+)\)/.exec(transform);
+                    if (match && currentPathPolyline) {
+                        const x = match[1];
+                        const y = match[2];
+                        const currentPoints = currentPathPolyline.getAttribute('points');
+                        currentPathPolyline.setAttribute('points', `${currentPoints} ${x},${y}`);
+                    }
+                }
+            }
+            return;
+        }
 
         const target = e.target;
         if (target.classList.contains('hex')) {
@@ -679,6 +882,17 @@ document.addEventListener('DOMContentLoaded', () => {
 
     document.addEventListener('mouseup', (e) => {
         isMouseDown = false;
+
+        if (isPaintingPath) {
+            isPaintingPath = false;
+            if (currentPathPolyline) {
+                currentPathPolyline.setAttribute('data-hex-path', currentPathHexes.join(';'));
+                saveHistory();
+            }
+            currentPathPolyline = null;
+            return;
+        }
+
         if (isDragging) {
             isDragging = false;
             // Prevent the subsequent click event from triggering single-select logic
@@ -710,6 +924,21 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         const target = e.target;
+
+        // Handle path click (Check parent if target is a path segment)
+        // Note: In SVG, the target is the polyline itself.
+        if (target.classList.contains('map-path') && currentTool === 'select') {
+            openPathPopup(target, e.clientX, e.clientY);
+            e.stopPropagation(); // Stop it from propagating to hexes below if any
+            return;
+        }
+
+        // Handle path click
+        if (target.classList.contains('map-path') && currentTool === 'select') {
+            openPathPopup(target, e.clientX, e.clientY);
+            return;
+        }
+
         if (target.classList.contains('hex')) {
             // Get transform to extract X,Y
             // transform="translate(123.4, 567.8)"
@@ -734,9 +963,10 @@ document.addEventListener('DOMContentLoaded', () => {
     // Close on click-away (anywhere that isn't a hex or the popup itself)
     document.addEventListener('click', (e) => {
         const isHex = e.target.classList.contains('hex');
-        const isInsidePopup = popup.contains(e.target) || addonPopup.contains(e.target);
+        const isPath = e.target.classList.contains('map-path');
+        const isInsidePopup = popup.contains(e.target) || addonPopup.contains(e.target) || pathPopup.contains(e.target);
 
-        if (!isHex && !isInsidePopup) {
+        if (!isHex && !isPath && !isInsidePopup) {
             closePopup();
         }
     });
@@ -772,6 +1002,15 @@ document.addEventListener('DOMContentLoaded', () => {
             const addon = hex.getAttribute('data-addon') || '';
             const label = hex.getAttribute('data-label') || '';
             csvContent += `${r},${c},${terrain},${addon},${label}\n`;
+        });
+
+        // Paths Section
+        csvContent += `SECTION_PATHS\n`;
+        const paths = pathLayer.querySelectorAll('.map-path');
+        paths.forEach(p => {
+            const type = p.getAttribute('class').replace('map-path', '').trim();
+            const nodes = p.getAttribute('data-hex-path');
+            csvContent += `path,${type},"${nodes}"\n`;
         });
 
         const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
@@ -847,6 +1086,28 @@ document.addEventListener('DOMContentLoaded', () => {
                 hexLayer.appendChild(polygon);
                 if (addon) updateAddonDisplay(polygon, addon, label || undefined);
             }
+
+            // Parse Paths if any
+            let pathSectionObj = [];
+            let inPathSection = false;
+            for (let i = 0; i < lines.length; i++) {
+                if (lines[i].trim() === 'SECTION_PATHS') {
+                    inPathSection = true;
+                    continue;
+                }
+                if (inPathSection) {
+                    const parts = lines[i].split(',');
+                    // format: path,type,"nodes"
+                    // naive split ignores quotes, need to handle "nodes" which contains ;
+                    if (parts.length < 3) continue;
+                    // Simple parse: type is index 1. Everything after index 1 is nodes (quoted).
+                    const type = parts[1];
+                    const rawNodes = lines[i].substring(lines[i].indexOf('"') + 1, lines[i].lastIndexOf('"'));
+
+                    pathSectionObj.push({ type: type, nodes: rawNodes });
+                }
+            }
+            restorePaths(pathSectionObj, hexSizeInput.value);
 
             // Sync visual zoom/footprint
             updateZoom();

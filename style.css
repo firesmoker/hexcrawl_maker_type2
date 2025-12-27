@@ -245,7 +245,7 @@ input[type=range]::-webkit-slider-thumb:hover {
 .terrain-row {
     display: flex;
     align-items: center;
-    gap: 1rem;
+    gap: 0.5rem;
     width: 100%;
 }
 
@@ -253,13 +253,14 @@ input[type=range]::-webkit-slider-thumb:hover {
     display: flex;
     align-items: center;
     position: relative;
-    padding-left: 25px;
+    padding-left: 20px;
     cursor: pointer;
     font-size: 0.8rem;
     user-select: none;
     color: var(--text-secondary);
-    min-width: 100px;
-    /* Fixed width for label part */
+    min-width: 90px;
+    width: 90px;
+    flex-shrink: 0;
 }
 
 .mini-check {
@@ -272,7 +273,8 @@ input[type=range]::-webkit-slider-thumb:hover {
     position: static !important;
     /* Override generic absolute positioning removed */
     flex: 1;
-    margin-left: 0.5rem;
+    margin-left: 0.125rem;
+    min-width: 60px;
 }
 
 .weight-val {
@@ -441,38 +443,38 @@ input[type=range]::-webkit-slider-thumb:hover {
 }
 
 /* Terrain Colors */
+:root {
+    --col-sea: #4fc3f7;
+    --col-plains: #aed581;
+    --col-swamp: #6d4c41;
+    --col-snow: #f5f5f5;
+    --col-desert: #fff59d;
+    --col-wasteland: #78909c;
+}
+
+/* Terrain Colors */
 .hex.sea {
-    fill: #4fc3f7;
+    fill: var(--col-sea);
 }
 
 .hex.plains {
-    fill: #c5e1a5;
+    fill: var(--col-plains);
 }
 
 .hex.swamp {
-    fill: #4e342e;
+    fill: var(--col-swamp);
 }
 
-/* Swapped to brownish for contrast or #558b2f for leafy */
 .hex.snow {
-    fill: #f5f5f5;
+    fill: var(--col-snow);
 }
 
 .hex.desert {
-    fill: #fff59d;
+    fill: var(--col-desert);
 }
 
 .hex.wasteland {
-    fill: #78909c;
-}
-
-/* Tweaks for specific fills */
-.hex.swamp {
-    fill: #6d4c41;
-}
-
-.hex.plains {
-    fill: #aed581;
+    fill: var(--col-wasteland);
 }
 
 /* If nothing selected or default */
@@ -607,6 +609,35 @@ input[type=range]::-webkit-slider-thumb:hover {
     overflow-y: auto;
 }
 
+.terrain-color-picker {
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+    width: 24px;
+    height: 24px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 0;
+    margin-right: -2px;
+    flex-shrink: 0;
+    /* Prevent squashing */
+}
+
+.terrain-color-picker::-webkit-color-swatch-wrapper {
+    padding: 0;
+}
+
+.terrain-color-picker::-webkit-color-swatch {
+    border: 2px solid rgba(0, 0, 0, 0.1);
+    border-radius: 4px;
+}
+
+.terrain-color-picker::-moz-color-swatch {
+    border: 2px solid rgba(0, 0, 0, 0.1);
+    border-radius: 4px;
+}
+
 .addon-item {
     display: flex;
     align-items: center;
@@ -713,4 +744,103 @@ input[type=range]::-webkit-slider-thumb:hover {
 
 .color-dot.wasteland {
     background: #78909c;
+}
+
+/* Tool Buttons */
+.tool-buttons {
+    display: flex;
+    gap: 0.5rem;
+    margin-top: 0.5rem;
+}
+
+.tool-btn {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.3rem;
+    background: transparent;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 0.6rem 0.2rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    color: var(--text-secondary);
+}
+
+.tool-btn svg {
+    opacity: 0.8;
+}
+
+.tool-btn span {
+    font-size: 0.65rem;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+.tool-btn:hover {
+    background: rgba(255, 255, 255, 0.2);
+    transform: translateY(-2px);
+}
+
+.tool-btn.active {
+    background: var(--accent-color);
+    color: white;
+    border-color: var(--accent-color);
+    box-shadow: 0 4px 10px rgba(62, 39, 35, 0.2);
+}
+
+.tool-btn.active svg {
+    opacity: 1;
+}
+
+/* Path Layers */
+#path-layer {
+    pointer-events: none;
+    /* Let clicks pass through to hexes */
+}
+
+#path-layer.interactive {
+    pointer-events: auto;
+}
+
+#path-layer.interactive .map-path {
+    pointer-events: visibleStroke;
+    cursor: pointer;
+}
+
+#path-layer.interactive .map-path:hover {
+    filter: brightness(1.2) drop-shadow(0 0 2px rgba(255, 255, 255, 0.5));
+}
+
+.map-path.selected {
+    stroke: #ffab40;
+    /* Orange highlight for selection */
+    filter: drop-shadow(0 0 3px #ffab40);
+    opacity: 1 !important;
+}
+
+.map-path {
+    fill: none;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    /* Default to none so painting works, but we override via JS class 'interactive' on parent */
+    pointer-events: none;
+    transition: d 0.1s linear, stroke-width 0.2s, stroke 0.2s, filter 0.2s;
+}
+
+.path-road {
+    stroke: #5d4037;
+    stroke-width: 6px;
+}
+
+.path-river {
+    stroke: #29b6f6;
+    stroke-width: 8px;
+    opacity: 0.8;
+}
+
+.path-preview {
+    opacity: 0.5;
 }

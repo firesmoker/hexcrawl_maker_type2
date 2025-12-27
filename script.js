@@ -547,8 +547,8 @@ document.addEventListener('DOMContentLoaded', () => {
             .hex.desert { fill: #fff59d; }
             .hex.wasteland { fill: #78909c; }
             .map-path { fill: none; stroke-linecap: round; stroke-linejoin: round; }
-            .path-road { stroke: #5d4037; stroke-width: 6px; }
-            .path-river { stroke: #29b6f6; stroke-width: 8px; opacity: 0.8; }
+            .path-road { stroke: #5d4037; stroke-width: 3px; filter: url(#rough-road); }
+            .path-river { stroke: #4fc3f7; stroke-width: 4px; opacity: 0.8; filter: url(#rough-river); }
         `;
 
         // Inject style element

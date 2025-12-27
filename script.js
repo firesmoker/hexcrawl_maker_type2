@@ -42,7 +42,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function updateHistoryUI() {
-        btnUndo.disabled = undoStack.length === 0;
+        btnUndo.disabled = undoStack.length <= 1;
         btnRedo.disabled = redoStack.length === 0;
     }
 

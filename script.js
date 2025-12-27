@@ -759,7 +759,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const isMac = navigator.platform.toUpperCase().indexOf('MAC') >= 0;
         const ctrlKey = isMac ? e.metaKey : e.ctrlKey;
 
-        if (ctrlKey && e.key.toLowerCase() === 'z') {
+        if (ctrlKey && e.code === 'KeyZ') {
             if (e.shiftKey) {
                 // Redo (Ctrl+Shift+Z)
                 redo();
@@ -768,7 +768,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 undo();
             }
             e.preventDefault();
-        } else if (ctrlKey && e.key.toLowerCase() === 'y') {
+        } else if (ctrlKey && e.code === 'KeyY') {
             // Redo (Ctrl+Y)
             redo();
             e.preventDefault();

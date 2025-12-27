@@ -51,6 +51,19 @@ document.addEventListener('DOMContentLoaded', () => {
 
     zoomInput.addEventListener('input', updateZoom);
 
+    // Mousewheel Zoom (Only with Shift)
+    document.querySelector('.main-content').addEventListener('wheel', (e) => {
+        if (!e.shiftKey) return; // Allow normal scroll if shift isn't held
+
+        const direction = e.deltaY < 0 ? 1 : -1;
+        const step = parseFloat(zoomInput.step) || 0.1;
+        let newVal = parseFloat(zoomInput.value) + (direction * step);
+        newVal = Math.max(parseFloat(zoomInput.min), Math.min(parseFloat(zoomInput.max), newVal));
+        zoomInput.value = newVal;
+        updateZoom();
+        e.preventDefault();
+    }, { passive: false });
+
     // Clustering Logic
     const clusteringInput = document.getElementById('clustering');
     const clusteringVal = document.getElementById('clustering-val');

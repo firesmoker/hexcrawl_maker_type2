@@ -435,15 +435,18 @@ document.addEventListener('DOMContentLoaded', () => {
     // Hex Selection Logic section moved to top.
 
 
-    function openPopup(hex, x, y) {
-        closePopup();
-        selectedHexes = [hex];
-
+    function openPopup(hex, x, y, overrideSelection = null) {
+        if (!overrideSelection) {
+            closePopup();
+            selectedHexes = [hex];
+            hex.classList.add('selected');
+            // Bring to front inside SVG to ensure full stroke is visible
+            hex.parentElement.appendChild(hex);
+        } else {
+            selectedHexes = overrideSelection;
+        }
 
         popupOptions.innerHTML = '';
-        hex.classList.add('selected');
-        // Bring to front inside SVG to ensure full stroke is visible
-        hex.parentElement.appendChild(hex);
 
         const currentClass = hex.getAttribute('class').replace('hex', '').replace('selected', '').trim();
         const currentAddon = hex.getAttribute('data-addon');
@@ -460,6 +463,13 @@ document.addEventListener('DOMContentLoaded', () => {
             hexLabelInput.value = '';
             btnShowAddons.classList.remove('hidden');
             btnRemoveAddon.classList.add('hidden');
+        }
+
+        // Hide "Select Cluster" if we are in multi-select mode (more than 1 hex selected)
+        if (selectedHexes.length > 1) {
+            btnSelectCluster.classList.add('hidden');
+        } else {
+            btnSelectCluster.classList.remove('hidden');
         }
 
         allTerrains.forEach(terrain => {
@@ -491,7 +501,9 @@ document.addEventListener('DOMContentLoaded', () => {
             `;
             item.addEventListener('click', (e) => {
                 e.stopPropagation();
-                selectedHexes.forEach(h => updateAddonDisplay(h, addon));
+                // If multi-select, don't default the label to the addon name
+                const label = selectedHexes.length > 1 ? '' : undefined;
+                selectedHexes.forEach(h => updateAddonDisplay(h, addon, label));
                 saveHistory();
                 closePopup();
             });
@@ -603,7 +615,73 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
+    // Drag Selection Logic
+    let isMouseDown = false;
+    let isDragging = false;
+    let ignoreNextClick = false;
+
+    hexLayer.addEventListener('mousedown', (e) => {
+        if (e.target.classList.contains('hex')) {
+            isMouseDown = true;
+            // Don't clear selection yet, wait to see if it's a drag or click
+        }
+    });
+
+    hexLayer.addEventListener('mousemove', (e) => {
+        if (!isMouseDown) return;
+
+        const target = e.target;
+        if (target.classList.contains('hex')) {
+            if (!isDragging) {
+                // First move - start drag sequence
+                isDragging = true;
+                closePopup(); // Clear any existing popup/selection
+                selectedHexes = [target];
+                target.classList.add('selected');
+                target.parentElement.appendChild(target);
+            } else {
+                // Continue drag
+                if (!selectedHexes.includes(target)) {
+                    selectedHexes.push(target);
+                    target.classList.add('selected');
+                    target.parentElement.appendChild(target);
+                }
+            }
+        }
+    });
+
+    document.addEventListener('mouseup', (e) => {
+        isMouseDown = false;
+        if (isDragging) {
+            isDragging = false;
+            // Prevent the subsequent click event from triggering single-select logic
+            ignoreNextClick = true;
+
+            // Open popup at the last selected hex position
+            if (selectedHexes.length > 0) {
+                const lastHex = selectedHexes[selectedHexes.length - 1];
+                const transform = lastHex.getAttribute('transform');
+                const match = /translate\(([^,]+),\s*([^)]+)\)/.exec(transform);
+
+                if (match) {
+                    const x = parseFloat(match[1]);
+                    const y = parseFloat(match[2]);
+                    openPopup(lastHex, x, y, selectedHexes);
+                }
+            }
+
+            // Reset ignore flag after a short delay to be safe, 
+            // though the click handler check usually happens immediately after mouseup.
+            setTimeout(() => { ignoreNextClick = false; }, 100);
+        }
+    });
+
     svgGrid.addEventListener('click', (e) => {
+        if (ignoreNextClick) {
+            ignoreNextClick = false;
+            return;
+        }
+
         const target = e.target;
         if (target.classList.contains('hex')) {
             // Get transform to extract X,Y

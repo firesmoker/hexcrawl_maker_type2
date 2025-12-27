@@ -5,6 +5,22 @@ document.addEventListener('DOMContentLoaded', () => {
     const svgGrid = document.getElementById('hex-grid');
     const pageContainer = document.getElementById('page-container');
 
+    // Hex Selection Logic - Defined early to avoid ReferenceErrors during initial generation
+    const popup = document.getElementById('hex-popup');
+    const popupOptions = document.getElementById('popup-options');
+    let activeHex = null;
+    const allTerrains = ['sea', 'plains', 'swamp', 'snow', 'desert', 'wasteland'];
+
+    function closePopup() {
+        if (!popup) return;
+        popup.classList.add('hidden');
+        if (activeHex) {
+            activeHex.style.stroke = '';
+            activeHex.style.strokeWidth = '';
+            activeHex = null;
+        }
+    }
+
     // Constants for A4 at 96 DPI (Web standard for "inch")
     // 210mm approx 793.7px, 297mm approx 1122.5px
     const PPI = 96;
@@ -18,6 +34,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const zoomVal = document.getElementById('zoom-level-val');
 
     function updateZoom() {
+        closePopup();
         const scale = parseFloat(zoomInput.value);
         zoomVal.textContent = `${Math.round(scale * 100)}%`;
         pageContainer.style.transform = `scale(${scale})`;
@@ -50,6 +67,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     function generateGrid() {
+        closePopup();
         // Clear existing
         svgGrid.innerHTML = '';
 
@@ -259,22 +277,8 @@ document.addEventListener('DOMContentLoaded', () => {
     generateGrid();
     updateZoom();
 
-    // Hex Selection Logic
-    const popup = document.getElementById('hex-popup');
-    const popupOptions = document.getElementById('popup-options');
-    let activeHex = null;
+    // Hex Selection Logic section moved to top.
 
-    const allTerrains = ['sea', 'plains', 'swamp', 'snow', 'desert', 'wasteland'];
-
-    function closePopup() {
-        popup.classList.add('hidden');
-        if (activeHex) {
-            // Optional: Remove highlight styling if any
-            activeHex.style.stroke = '';
-            activeHex.style.strokeWidth = '';
-            activeHex = null;
-        }
-    }
 
     function openPopup(hex, x, y) {
         activeHex = hex;
@@ -302,25 +306,25 @@ document.addEventListener('DOMContentLoaded', () => {
 
         popup.classList.remove('hidden');
 
-        // Positioning logic
-        // We need to account for zooming on the page-container.
-        // x,y are strictly SVG coords. 
+        // Positioning logic - using viewport coordinates (fixed positioning)
+        const rect = hex.getBoundingClientRect();
 
-        // Easier approach: Use standard position relative to the hex rect in client space
-        // because the popup is inside page-container, position absolute is relative to page-container (which is scaled).
-        // If we put position absolute, it scales WITH the container.
-        // So we can use the hex coordinates directly!
+        // Position to the right of the hex
+        let popupLeft = rect.right + 10;
+        let popupTop = rect.top;
 
-        // x and y passed here are center of hex from script.
-        // But we get MouseEvent target.
-        // Let's use getBBox() of the hex element is safer?
+        // Boundary check: If it goes off the right edge, move to the left
+        if (popupLeft + 200 > window.innerWidth) {
+            popupLeft = rect.left - 210;
+        }
 
-        // Actually, since popup is inside #page-container, left/top are relative to the container.
-        // The hex coordinates (x,y) are exactly what we need.
+        // Boundary check: Bottom edge
+        if (popupTop + 250 > window.innerHeight) {
+            popupTop = window.innerHeight - 260;
+        }
 
-        // Offset slightly to right/bottom
-        popup.style.left = `${x + 20}px`;
-        popup.style.top = `${y - 20}px`;
+        popup.style.left = `${popupLeft}px`;
+        popup.style.top = `${popupTop}px`;
     }
 
     svgGrid.addEventListener('click', (e) => {
@@ -347,5 +351,8 @@ document.addEventListener('DOMContentLoaded', () => {
             closePopup();
         }
     });
+
+    // Close on scroll
+    document.querySelector('.main-content').addEventListener('scroll', closePopup);
 
 });

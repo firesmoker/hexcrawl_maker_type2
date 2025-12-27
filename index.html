@@ -124,16 +124,16 @@
             <svg id="hex-grid" xmlns="http://www.w3.org/2000/svg">
                 <!-- Hexagons will be generated here -->
             </svg>
-
-            <!-- Context Menu / Popup -->
-            <div id="hex-popup" class="hex-popup hidden">
-                <div class="popup-title">Edit Hex</div>
-                <div class="popup-options" id="popup-options">
-                    <!-- Options injected via JS -->
-                </div>
-            </div>
         </div>
     </main>
+
+    <!-- Context Menu / Popup moved to body level -->
+    <div id="hex-popup" class="hex-popup hidden">
+        <div class="popup-title">Edit Hex</div>
+        <div class="popup-options" id="popup-options">
+            <!-- Options injected via JS -->
+        </div>
+    </div>
 
     <script src="script.js"></script>
 </body>

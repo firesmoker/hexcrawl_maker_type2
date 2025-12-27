@@ -370,7 +370,7 @@ input[type=range]::-webkit-slider-thumb:hover {
 
 /* Hex Popup styling */
 .hex-popup {
-    position: absolute;
+    position: fixed;
     background: rgba(22, 27, 34, 0.95);
     backdrop-filter: blur(10px);
     -webkit-backdrop-filter: blur(10px);
@@ -430,7 +430,7 @@ input[type=range]::-webkit-slider-thumb:hover {
     cursor: pointer;
     transition: background 0.2s;
     font-size: 0.9rem;
-    color: var(--text-primary);
+    color: white;
 }
 
 .popup-option:hover {

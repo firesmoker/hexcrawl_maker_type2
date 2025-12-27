@@ -531,10 +531,16 @@ document.addEventListener('DOMContentLoaded', () => {
         // Boundary check: If it still goes off the left edge (very small screen), pin to left
         if (popupLeft < 10) popupLeft = 10;
 
-        // Boundary check: Bottom edge - if it would crop, flip upwards
-        if (popupTop + popupHeight > window.innerHeight) {
-            // Align the bottom of the popup with the bottom of the hex
-            popupTop = rect.bottom - popupHeight;
+        // Boundary check: Bottom edge
+        if (popupTop + popupHeight > window.innerHeight - 10) {
+            // Strategy 1: Try flip upwards (align bottom of popup to top of hex)
+            // This preserves the context and felt better for standard cases
+            popupTop = rect.top - popupHeight;
+
+            // Strategy 2: If flipping it up pushes it off the TOP, valid fallback is to clamp to bottom
+            if (popupTop < 10) {
+                popupTop = window.innerHeight - popupHeight - 10;
+            }
         }
 
         // Boundary check: Top edge safety

@@ -40,6 +40,10 @@ h6,
 .btn-cluster,
 .btn-add-ons,
 .btn-remove-addon,
+.sidebar,
+.right-panel,
+.vertical-zoom-widget,
+.hex-popup,
 label,
 text {
     -webkit-user-select: none;
@@ -72,14 +76,28 @@ body {
     height: 100vh;
     overflow-y: auto;
     flex-shrink: 0;
+    user-select: none;
 }
 
-input,
+input[type="text"],
+input[type="number"],
 textarea {
     -webkit-user-select: text;
     -moz-user-select: text;
     -ms-user-select: text;
     user-select: text;
+}
+
+.control-group,
+.terrain-row,
+.slider-container,
+input[type="range"],
+input[type="color"],
+input[type="checkbox"] {
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
 }
 
 .sidebar {

@@ -70,35 +70,44 @@ This is the heart of the app. We verify it works *visually* before adding intera
     - Move `popup` logic (`openPopup`, `closePopup`) here.
     - **critical**: Do NOT import `grid.js` or `history.js` here yet to avoid cycles.
 
-- [ ] **Task 5: Grid Generation Module**
-    - Create `js/grid.js`: Extract `generateGrid`, `restorePaths`, `syncGhosts`.
-    - Import `dom`, `config`, `state`, `ui`.
-    - **Action**: In `js/main.js`, call `generateGrid()` on load.
-    - **Verify**: The map renders correctly on page load (static).
+- [x] **Task 5: Grid Structure & Helpers**
+    - Create `js/grid.js` with `gridTerrains` variable and `setGridCallbacks`.
+    - Move `getCluster` and `syncGhosts` to `js/grid.js`.
+    - **Verify**: Import `js/grid.js` in console and check exports.
+
+- [ ] **Task 6: Grid Generation Logic**
+    - Add `generateGrid` and `restorePaths` to `js/grid.js`.
+    - Ensure strict usage of `dom` module for element access.
+    - **Verify**: Check `js/grid.js` for syntax errors (no execution yet).
+
+- [ ] **Task 7: Initial Wiring & Render**
+    - Update `js/main.js` to initialize DOM and call `generateGrid`.
+    - Switch `index.html` to use `js/main.js`.
+    - **Verify**: The map renders visually on the page.
 
 ## Phase 3: Systems & Logic
 Connecting the static grid to the rest of the application.
 
-- [ ] **Task 6: History System (with Dependency Injection)**
+- [ ] **Task 8: History System (with Dependency Injection)**
     - Create `js/history.js`: Extract `saveHistory`, `undo`, `redo`, `applyState`.
     - **Architecture Fix**: `history.js` needs to call `generateGrid`. To avoid circular imports (`grid` imports `history` to save, `history` imports `grid` to restore), use a setter:
         - Export `setCallbacks({ generateGrid, restorePaths })`.
         - In `js/main.js`, inject these functions into `history.js`.
     - **Verify**: Manually calling `saveHistory()` works (check console/memory).
 
-- [ ] **Task 7: IO Module**
+- [ ] **Task 9: IO Module**
     - Create `js/io.js`: Extract Export CSV, Import CSV, Download PNG logic.
     - **Verify**: Buttons trigger file downloads/inputs.
 
 ## Phase 4: Interaction & Wiring
 Making the map interactive.
 
-- [ ] **Task 8: Interaction Module**
+- [ ] **Task 10: Interaction Module**
     - Create `js/interaction.js`: Extract mouse event listeners (`mousedown`, `mousemove`, `click`).
     - Move `getCluster` here or to `grid.js` (keep logical).
     - **Verify**: Clicking hexes, painting paths, and tool switching works.
 
-- [ ] **Task 9: Final Wiring & Cleanup**
+- [ ] **Task 11: Final Wiring & Cleanup**
     - Update `js/main.js`:
         - Initialize listeners (IO, Interaction, Tools).
         - Hook up Undo/Redo buttons.

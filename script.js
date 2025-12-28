@@ -225,6 +225,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 const [r, c] = node.split(',').map(Number);
                 let x = c * hexWidth;
                 let y = r * vertDist;
+                // Shift odd rows right by half a hex width so their leftmost edge (x - w2) is at 0.
                 if (r % 2 !== 0) x += hexWidth / 2;
                 points.push({ x: x, y: y });
             });
@@ -429,8 +430,10 @@ document.addEventListener('DOMContentLoaded', () => {
         const horizDist = hexWidth;
         const vertDist = 1.5 * R;
 
-        const cols = Math.ceil(pageWidth / horizDist) + 1;
-        const rows = Math.ceil(pageHeight / vertDist) + 1;
+        // Use slightly more inclusive bounds to ensure we check every potential hex that might overlap the boundary.
+        // The precise culling logic below will handle filtering them out.
+        const cols = Math.ceil(pageWidth / horizDist) + 2;
+        const rows = Math.ceil(pageHeight / vertDist) + 2;
 
         const w2 = hexWidth / 2;
         const r2 = R / 2;
@@ -442,9 +445,29 @@ document.addEventListener('DOMContentLoaded', () => {
             for (let col = 0; col < cols; col++) {
                 let x = col * horizDist;
                 let y = row * vertDist;
+
+                // Position logic: 
+                // Even rows (0, 2...) start at x=0 (left edge of hex is at -hexWidth/2)
+                // Odd rows (1, 3...) start at x=hexWidth/2 (left edge of hex is at 0)
+                // This fulfills the requirement that the ODD row is perfectly aligned with the left edge.
                 if (row % 2 !== 0) x += hexWidth / 2;
 
-                if (x < -hexWidth || x > pageWidth + hexWidth || y < -hexHeight || y > pageHeight + hexHeight) {
+                // 1. Precise culling + 15% Threshold Check
+                // We calculate exactly how many pixels of the hex width/height are actually on the page.
+                const hexTotalHeight = 2 * R;
+                const visibilityThreshold = 0.15;
+
+                const left = x - w2;
+                const right = x + w2;
+                const top = y - R;
+                const bottom = y + R;
+
+                const visibleW = Math.max(0, Math.min(right, pageWidth) - Math.max(left, 0));
+                const visibleH = Math.max(0, Math.min(bottom, pageHeight) - Math.max(top, 0));
+
+                // If either dimension is less than 15% visible, it's a sliver or off-page.
+                // This handles Left, Right, Top, and Bottom edges in one unified check.
+                if (visibleW < hexWidth * visibilityThreshold || visibleH < hexTotalHeight * visibilityThreshold) {
                     continue;
                 }
 

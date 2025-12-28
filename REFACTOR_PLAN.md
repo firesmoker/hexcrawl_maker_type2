@@ -65,7 +65,7 @@ These modules have zero or few dependencies. We will create them first.
 ## Phase 2: Core Logic (The Grid)
 This is the heart of the app. We verify it works *visually* before adding interactions.
 
-- [ ] **Task 4: UI Helper Module (Basic)**
+- [x] **Task 4: UI Helper Module (Basic)**
     - Create `js/ui.js`: Extract `updateValDisplay`, `updateZoom`, `updateAddonDisplay`.
     - Move `popup` logic (`openPopup`, `closePopup`) here.
     - **critical**: Do NOT import `grid.js` or `history.js` here yet to avoid cycles.

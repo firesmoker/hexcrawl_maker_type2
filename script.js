@@ -1011,6 +1011,26 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
+    // Double-click to select cluster
+    svgGrid.addEventListener('dblclick', (e) => {
+        const target = e.target;
+        if (target.classList.contains('hex') && currentTool === 'select') {
+            const cluster = getCluster(target);
+
+            // Clear single selection state
+            closePopup();
+
+            // Highlight all hexes in cluster
+            cluster.forEach(h => {
+                h.classList.add('selected');
+                h.parentElement.appendChild(h);
+            });
+
+            // Open popup for cluster
+            openPopup(target, 0, 0, cluster);
+        }
+    });
+
     hexLayer.addEventListener('mouseover', (e) => {
         if (e.target.classList.contains('hex')) {
             // Bring to front on hover so the highlight stroke is never clipped

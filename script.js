@@ -129,7 +129,8 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function saveHistory() {
-        const hexes = svgGrid.querySelectorAll('.hex');
+        // Only save interactive hexes, ignore ghosts
+        const hexes = svgGrid.querySelectorAll('.hex:not(.hex-ghost)');
         const hexData = Array.from(hexes).map(h => ({
             r: h.getAttribute('data-row'),
             c: h.getAttribute('data-col'),
@@ -165,6 +166,14 @@ document.addEventListener('DOMContentLoaded', () => {
         updateHistoryUI();
     }
 
+    function syncGhosts(row, col, terrain) {
+        const ghosts = svgGrid.querySelectorAll(`.hex-ghost[data-parent="${row},${col}"]`);
+        ghosts.forEach(g => {
+            const t = terrain.includes('hex') ? terrain.replace('hex', '').replace('selected', '').trim() : terrain;
+            g.setAttribute('class', `hex hex-ghost ${t}`);
+        });
+    }
+
     function applyState(state) {
         if (!state) return;
 
@@ -172,7 +181,6 @@ document.addEventListener('DOMContentLoaded', () => {
         if (state.colors) {
             Object.keys(state.colors).forEach(t => {
                 document.documentElement.style.setProperty(`--col-${t}`, state.colors[t]);
-                // Update picker input value to match
                 const picker = document.querySelector(`.terrain-color-picker[data-terrain="${t}"]`);
                 if (picker) picker.value = state.colors[t];
             });
@@ -182,29 +190,11 @@ document.addEventListener('DOMContentLoaded', () => {
         if (state.hexSize !== currentSize) {
             hexSizeInput.value = state.hexSize;
             updateValDisplay();
-            // Full re-render needed for geometry change
-            generateGrid(state.hexes);
-        } else {
-            // Hot swap data without clearing everything
-            state.hexes.forEach(data => {
-                const hex = svgGrid.querySelector(`.hex[data-row="${data.r}"][data-col="${data.c}"]`);
-                if (hex) {
-                    hex.setAttribute('class', `hex ${data.t}`);
-                    if (data.a) {
-                        updateAddonDisplay(hex, data.a, data.l);
-                    } else {
-                        updateAddonDisplay(hex, null);
-                    }
-                }
-            });
-            generateGrid(state.hexes); // Force re-render to clear paths if needed? No, hot swap is better.
-            // Actually, we must restore paths here too
-            restorePaths(state.paths, state.hexSize);
         }
 
-        if (state.hexSize === currentSize) {
-            restorePaths(state.paths, state.hexSize);
-        }
+        // Full re-render ensures ghosts and terrain are perfectly synced with state
+        generateGrid(state.hexes);
+        restorePaths(state.paths, hexSizeInput.value);
         updateHistoryUI();
     }
 
@@ -442,6 +432,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const gridTerrains = {};
 
         for (let row = 0; row < rows; row++) {
+            let lastInteractiveCol = -1;
             for (let col = 0; col < cols; col++) {
                 let x = col * horizDist;
                 let y = row * vertDist;
@@ -516,6 +507,28 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (addon) {
                     updateAddonDisplay(polygon, addon, label);
                 }
+                lastInteractiveCol = col;
+            }
+
+            // ADD GHOST HEX TO THE RIGHT END OF THE ROW
+            if (lastInteractiveCol !== -1) {
+                const ghostCol = lastInteractiveCol + 1;
+                let gx = ghostCol * horizDist;
+                let gy = row * vertDist;
+                if (row % 2 !== 0) gx += hexWidth / 2;
+
+                // Only add if it could possibly be visible (not completely off-page to the left/top/etc)
+                // But it's always to the right of lastInteractiveCol, which is on-page.
+                const ghost = document.createElementNS("http://www.w3.org/2000/svg", "polygon");
+                ghost.setAttribute("points", points);
+                ghost.setAttribute("transform", `translate(${gx}, ${gy})`);
+                ghost.setAttribute("data-row", row);
+                ghost.setAttribute("data-col", ghostCol);
+                ghost.setAttribute("data-parent", `${row},${lastInteractiveCol}`);
+
+                const parentTerrain = gridTerrains[`${row},${lastInteractiveCol}`];
+                ghost.setAttribute("class", `hex hex-ghost ${parentTerrain}`);
+                hexLayer.appendChild(ghost);
             }
         }
 
@@ -674,6 +687,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 e.stopPropagation(); // Prevent re-triggering grid click
                 selectedHexes.forEach(h => {
                     h.setAttribute('class', `hex ${terrain}`);
+                    syncGhosts(h.getAttribute('data-row'), h.getAttribute('data-col'), terrain);
                 });
                 saveHistory();
                 closePopup();
@@ -1105,7 +1119,7 @@ document.addEventListener('DOMContentLoaded', () => {
         let csvContent = `metadata,hexSize,${hexSizeInput.value}\n`;
         csvContent += `row,col,terrain,addon,label\n`;
 
-        const hexes = svgGrid.querySelectorAll('.hex');
+        const hexes = svgGrid.querySelectorAll('.hex:not(.hex-ghost)');
         hexes.forEach(hex => {
             const r = hex.getAttribute('data-row');
             const c = hex.getAttribute('data-col');

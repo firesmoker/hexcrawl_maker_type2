@@ -498,6 +498,10 @@ input[type=range]::-webkit-slider-thumb:hover {
     paint-order: stroke fill;
 }
 
+.hex-ghost {
+    pointer-events: none;
+}
+
 /* Terrain Colors */
 :root {
     --col-sea: #4fc3f7;

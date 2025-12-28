@@ -53,7 +53,7 @@ These modules have zero or few dependencies. We will create them first.
     - Create `js/main.js`: Empty entry point.
     - **Verify**: `import { PPI } from './js/config.js'` in `js/main.js` works (check console).
 
-- [ ] **Task 2: Utility Module**
+- [x] **Task 2: Utility Module**
     - Create `js/utils.js`: Extract `getSmoothPathD`, `getIconDataUri`, `escapeCSVField`, `parseCSVLine`.
     - **Verify**: Functions are importable.
 

@@ -57,7 +57,7 @@ These modules have zero or few dependencies. We will create them first.
     - Create `js/utils.js`: Extract `getSmoothPathD`, `getIconDataUri`, `escapeCSVField`, `parseCSVLine`.
     - **Verify**: Functions are importable.
 
-- [ ] **Task 3: State & DOM Modules**
+- [x] **Task 3: State & DOM Modules**
     - Create `js/state.js`: Export mutable `state` object (undoStack, currentTool, etc.).
     - Create `js/dom.js`: Export `dom` object and `initDOM()` function.
     - **Verify**: Call `initDOM()` in `js/main.js` and log a captured element.

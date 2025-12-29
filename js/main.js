@@ -1,9 +1,9 @@
 import { initDOM, dom } from './dom.js';
-import { setUICallbacks, initPopupListeners, openPopup, updateZoom, initColorPickers, updateValDisplay, updateClusteringDisplay, initTerrainWeightListeners } from './ui_core.js';
-import { generateGrid, restorePaths, setGridCallbacks, getCluster } from './grid.js';
-import { initInteraction, setInteractionCallbacks } from './interaction.js';
-import { saveHistory, undo, redo, applyState, setHistoryCallbacks } from './history.js';
-import { handleCSVUpload, exportMapToCSV, downloadMapAsPNG, setIOCallbacks } from './io.js';
+import * as UI from './ui_core.js';
+import * as Grid from './grid.js';
+import * as Interaction from './interaction.js';
+import * as History from './history.js';
+import * as IO from './io.js';
 import { state } from './state.js';
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -15,74 +15,85 @@ document.addEventListener('DOMContentLoaded', () => {
     // 2. Wire up Dependencies (Callbacks)
 
     // UI needs to save history when tools change or popups interact
-    setUICallbacks({
-        saveHistory,
+    UI.setUICallbacks({
+        saveHistory: History.saveHistory,
         onSelectCluster: (hex) => {
-            const cluster = getCluster(hex);
+            const cluster = Grid.getCluster(hex);
             // Select visually
             cluster.forEach(h => {
                 h.classList.add('selected');
                 h.parentElement.appendChild(h);
             });
-            openPopup(hex, 0, 0, cluster);
+            UI.openPopup(hex, 0, 0, cluster);
         }
     });
 
     // Grid needs to save history after generation
-    setGridCallbacks({ saveHistory });
+    Grid.setGridCallbacks({ saveHistory: History.saveHistory });
 
     // Interaction needs history, undo/redo
-    setInteractionCallbacks({ saveHistory, undo, redo });
+    Interaction.setInteractionCallbacks({
+        saveHistory: History.saveHistory,
+        undo: History.undo,
+        redo: History.redo
+    });
 
     // History needs to be able to regenerate grid and restore paths
-    setHistoryCallbacks({ generateGrid, restorePaths });
+    History.setHistoryCallbacks({
+        generateGrid: Grid.generateGrid,
+        restorePaths: Grid.restorePaths
+    });
 
     // IO needs to regenerate grid/paths after import, and save history
-    setIOCallbacks({ generateGrid, restorePaths, saveHistory });
+    IO.setIOCallbacks({
+        generateGrid: Grid.generateGrid,
+        restorePaths: Grid.restorePaths,
+        saveHistory: History.saveHistory
+    });
 
     // 3. Initialize Event Listeners
-    initInteraction();
-    initPopupListeners();
+    Interaction.initInteraction();
+    UI.initPopupListeners();
 
     // 4. Initial Render
     if (dom.btnGenerate) {
         dom.btnGenerate.addEventListener('click', () => {
-            generateGrid();
+            Grid.generateGrid();
         });
     }
 
     if (dom.hexSizeInput) {
-        dom.hexSizeInput.addEventListener('input', updateValDisplay);
+        dom.hexSizeInput.addEventListener('input', UI.updateValDisplay);
         dom.hexSizeInput.addEventListener('change', () => {
-            updateValDisplay();
+            UI.updateValDisplay();
             if (dom.autoApplyInput && dom.autoApplyInput.checked) {
-                generateGrid();
+                Grid.generateGrid();
             }
         });
     }
 
     if (dom.clusteringInput) {
-        dom.clusteringInput.addEventListener('input', updateClusteringDisplay);
+        dom.clusteringInput.addEventListener('input', UI.updateClusteringDisplay);
     }
 
     // Zoom listeners
     if (dom.zoomInput) {
-        dom.zoomInput.addEventListener('input', updateZoom);
+        dom.zoomInput.addEventListener('input', UI.updateZoom);
     }
 
     // IO Listeners
-    if (dom.btnExport) dom.btnExport.addEventListener('click', exportMapToCSV);
+    if (dom.btnExport) dom.btnExport.addEventListener('click', IO.exportMapToCSV);
     if (dom.btnImport) dom.btnImport.addEventListener('click', () => dom.csvUpload.click());
-    if (dom.csvUpload) dom.csvUpload.addEventListener('change', handleCSVUpload);
-    if (dom.btnDownload) dom.btnDownload.addEventListener('click', downloadMapAsPNG);
+    if (dom.csvUpload) dom.csvUpload.addEventListener('change', IO.handleCSVUpload);
+    if (dom.btnDownload) dom.btnDownload.addEventListener('click', IO.downloadMapAsPNG);
 
     // Initial Grid
-    generateGrid();
-    updateZoom();
+    Grid.generateGrid();
+    UI.updateZoom();
 
     // Setup color pickers live update
-    initColorPickers();
-    initTerrainWeightListeners();
+    UI.initColorPickers();
+    UI.initTerrainWeightListeners();
 
     console.log("App Initialized.");
 });

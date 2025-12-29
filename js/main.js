@@ -1,5 +1,5 @@
 import { initDOM, dom } from './dom.js';
-import { setUICallbacks, initPopupListeners, openPopup, updateZoom } from './ui.js';
+import { setUICallbacks, initPopupListeners, openPopup, updateZoom } from './ui_core.js';
 import { generateGrid, restorePaths, setGridCallbacks, getCluster } from './grid.js';
 import { initInteraction, setInteractionCallbacks } from './interaction.js';
 import { saveHistory, undo, redo, applyState, setHistoryCallbacks } from './history.js';

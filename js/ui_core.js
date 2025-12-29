@@ -5,7 +5,8 @@ import { getIconDataUri } from './utils.js';
 
 let callbacks = {
     syncGhosts: null,
-    saveHistory: null
+    saveHistory: null,
+    onSelectCluster: null
 };
 
 export function setUICallbacks(cbs) {

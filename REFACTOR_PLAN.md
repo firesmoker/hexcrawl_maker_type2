@@ -75,44 +75,77 @@ This is the heart of the app. We verify it works *visually* before adding intera
     - Move `getCluster` and `syncGhosts` to `js/grid.js`.
     - **Verify**: Import `js/grid.js` in console and check exports.
 
-- [ ] **Task 6: Grid Generation Logic**
+- [x] **Task 6: Grid Generation Logic**
     - Add `generateGrid` and `restorePaths` to `js/grid.js`.
     - Ensure strict usage of `dom` module for element access.
     - **Verify**: Check `js/grid.js` for syntax errors (no execution yet).
 
-- [ ] **Task 7: Initial Wiring & Render**
-    - Update `js/main.js` to initialize DOM and call `generateGrid`.
-    - Switch `index.html` to use `js/main.js`.
-    - **Verify**: The map renders visually on the page.
+- [ ] **Task 7: History Module Extraction**
+    - Create `js/history.js`.
+    - Extract `saveHistory`, `undo`, `redo`, `applyState`.
+    - Implement `setHistoryCallbacks` for Grid dependency.
+    - **Verify**: `js/history.js` syntax is valid.
+    - **Expected App State**: **FULLY FUNCTIONAL** (Uses `script.js`). New file is offline.
 
-## Phase 3: Systems & Logic
-Connecting the static grid to the rest of the application.
+- [ ] **Task 8: IO Module Extraction**
+    - Create `js/io.js`.
+    - Extract Export/Import CSV, Download PNG logic.
+    - Implement `setIOCallbacks`.
+    - **Verify**: `js/io.js` syntax is valid.
+    - **Expected App State**: **FULLY FUNCTIONAL** (Uses `script.js`). New file is offline.
 
-- [ ] **Task 8: History System (with Dependency Injection)**
-    - Create `js/history.js`: Extract `saveHistory`, `undo`, `redo`, `applyState`.
-    - **Architecture Fix**: `history.js` needs to call `generateGrid`. To avoid circular imports (`grid` imports `history` to save, `history` imports `grid` to restore), use a setter:
-        - Export `setCallbacks({ generateGrid, restorePaths })`.
-        - In `js/main.js`, inject these functions into `history.js`.
-    - **Verify**: Manually calling `saveHistory()` works (check console/memory).
+## Phase 4: Interaction Logic Breakdown
+breaking the complex interaction logic into manageable pieces.
 
-- [ ] **Task 9: IO Module**
-    - Create `js/io.js`: Extract Export CSV, Import CSV, Download PNG logic.
-    - **Verify**: Buttons trigger file downloads/inputs.
+- [ ] **Task 9: Interaction - Selection & Popups**
+    - Create `js/interaction.js` (Structure).
+    - Extract `handleClick`, `handleDoubleClick`, `openPopup` integration.
+    - Focus ONLY on "Clicking" and "Selecting".
+    - **Verify**: Code review of logic transfer.
+    - **Expected App State**: **FULLY FUNCTIONAL** (Uses `script.js`). New file is offline.
 
-## Phase 4: Interaction & Wiring
-Making the map interactive.
+- [ ] **Task 10: Interaction - Path Painting & Dragging**
+    - Update `js/interaction.js`.
+    - Extract `handleMouseDown`, `handleMouseMove`, `handleMouseUp`.
+    - Move Path Smoothing logic (`getSmoothPathD` usage).
+    - **Verify**: Code review of drag state logic.
+    - **Expected App State**: **FULLY FUNCTIONAL** (Uses `script.js`). New file is offline.
 
-- [ ] **Task 10: Interaction Module**
-    - Create `js/interaction.js`: Extract mouse event listeners (`mousedown`, `mousemove`, `click`).
-    - Move `getCluster` here or to `grid.js` (keep logical).
-    - **Verify**: Clicking hexes, painting paths, and tool switching works.
+- [ ] **Task 11: Interaction - Global Inputs**
+    - Update `js/interaction.js`.
+    - Extract Keyboard Shortcuts (`Ctrl+Z`, `Ctrl+Y`, `+`, `-`).
+    - Extract Zoom Keybinds.
+    - Extract Global Click (close popup) listeners.
+    - **Expected App State**: **FULLY FUNCTIONAL** (Uses `script.js`). New file is offline.
 
-- [ ] **Task 11: Final Wiring & Cleanup**
-    - Update `js/main.js`:
-        - Initialize listeners (IO, Interaction, Tools).
-        - Hook up Undo/Redo buttons.
-    - Switch `index.html` to `<script type="module" src="js/main.js"></script>`.
-    - **Delete**: `script.js`.
+## Phase 5: Integration & Switchover
+Putting it all together.
+
+- [ ] **Task 12: Main Assembler (Wiring)**
+    - Update `js/main.js`.
+    - Import ALL modules.
+    - Perform all `setCallbacks` injections (Wiring).
+    - Initialize `initInteraction()`, `initPopupListeners()`.
+    - **Verify**: `js/main.js` has no reference errors.
+    - **Expected App State**: **FULLY FUNCTIONAL** (Uses `script.js`). New file is offline.
+
+- [ ] **Task 13: Live Switchover**
+    - Update `index.html`: Change `<script src="script.js">` to `<script type="module" src="js/main.js">`.
+    - **Verify**: Load the page. Grid should render.
+    - **Expected App State**: **CHANGED**. Logic swaps from `script.js` to `js/main.js`. If valid, it works identically. If invalid, map may fail to load (reversible).
+
+- [ ] **Task 14: Functional Verification**
+    - **Explicitly Test**:
+        1.  Hex Selection (Click).
+        2.  Path Painting (Drag).
+        3.  Zooming (Slider & Keys).
+        4.  IO (Export/Import).
+    - Fix any regressions found immediately.
+    - **Expected App State**: **FUNCTIONAL** (Verification step).
+
+- [ ] **Task 15: Clean Up**
+    - Delete `script.js` ONLY after Task 14 passes.
+    - **Expected App State**: **FULLY FUNCTIONAL**. Legacy code removed.
 
 ## Verification Checklist after EACH Step
 1.  **Console Check**: No red errors.

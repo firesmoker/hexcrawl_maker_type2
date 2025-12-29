@@ -1,5 +1,5 @@
 import { initDOM, dom } from './dom.js';
-import { setUICallbacks, initPopupListeners, openPopup, updateZoom, initColorPickers } from './ui_core.js';
+import { setUICallbacks, initPopupListeners, openPopup, updateZoom, initColorPickers, updateValDisplay, updateClusteringDisplay, initTerrainWeightListeners } from './ui_core.js';
 import { generateGrid, restorePaths, setGridCallbacks, getCluster } from './grid.js';
 import { initInteraction, setInteractionCallbacks } from './interaction.js';
 import { saveHistory, undo, redo, applyState, setHistoryCallbacks } from './history.js';
@@ -52,11 +52,17 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     if (dom.hexSizeInput) {
+        dom.hexSizeInput.addEventListener('input', updateValDisplay);
         dom.hexSizeInput.addEventListener('change', () => {
+            updateValDisplay();
             if (dom.autoApplyInput && dom.autoApplyInput.checked) {
                 generateGrid();
             }
         });
+    }
+
+    if (dom.clusteringInput) {
+        dom.clusteringInput.addEventListener('input', updateClusteringDisplay);
     }
 
     // Zoom listeners
@@ -76,6 +82,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Setup color pickers live update
     initColorPickers();
+    initTerrainWeightListeners();
 
     console.log("App Initialized.");
 });

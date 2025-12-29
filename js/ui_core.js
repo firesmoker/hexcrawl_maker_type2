@@ -19,6 +19,12 @@ export function updateValDisplay() {
     }
 }
 
+export function updateClusteringDisplay() {
+    if (dom.clusteringVal && dom.clusteringInput) {
+        dom.clusteringVal.textContent = `${Math.round(parseFloat(dom.clusteringInput.value) * 100)}%`;
+    }
+}
+
 export function updateZoom() {
     closePopup();
     const scale = parseFloat(dom.zoomInput.value);
@@ -273,6 +279,20 @@ export function initPopupListeners() {
                 dom.pathPopup.classList.add('hidden');
                 if (callbacks.saveHistory) callbacks.saveHistory();
             }
+        });
+    }
+}
+
+export function initTerrainWeightListeners() {
+    if (dom.terrainWeights) {
+        dom.terrainWeights.forEach(input => {
+            const update = () => {
+                const valSpan = input.parentElement.querySelector('.weight-val');
+                if (valSpan) valSpan.textContent = `${input.value}%`;
+            };
+            input.addEventListener('input', update);
+            // Initialize on load
+            update();
         });
     }
 }

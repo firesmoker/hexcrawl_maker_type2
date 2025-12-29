@@ -1,5 +1,5 @@
 import { initDOM, dom } from './dom.js';
-import { setUICallbacks, initPopupListeners, openPopup, updateZoom } from './ui_core.js';
+import { setUICallbacks, initPopupListeners, openPopup, updateZoom, initColorPickers } from './ui_core.js';
 import { generateGrid, restorePaths, setGridCallbacks, getCluster } from './grid.js';
 import { initInteraction, setInteractionCallbacks } from './interaction.js';
 import { saveHistory, undo, redo, applyState, setHistoryCallbacks } from './history.js';
@@ -74,16 +74,8 @@ document.addEventListener('DOMContentLoaded', () => {
     generateGrid();
     updateZoom();
 
-    // Setup color pickers live update (Main.js is responsible for this wiring as it spans UI/State)
-    document.querySelectorAll('.terrain-color-picker').forEach(picker => {
-        picker.addEventListener('input', (e) => {
-            const terrain = e.target.getAttribute('data-terrain');
-            document.documentElement.style.setProperty(`--col-${terrain}`, e.target.value);
-        });
-        picker.addEventListener('change', () => {
-            saveHistory();
-        });
-    });
+    // Setup color pickers live update
+    initColorPickers();
 
     console.log("App Initialized.");
 });

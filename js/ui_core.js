@@ -263,6 +263,7 @@ export function initPopupListeners() {
         });
     }
 
+
     // Path Popup - Delete Button
     if (dom.btnDeletePath) {
         dom.btnDeletePath.addEventListener('click', () => {
@@ -274,4 +275,16 @@ export function initPopupListeners() {
             }
         });
     }
+}
+
+export function initColorPickers() {
+    document.querySelectorAll('.terrain-color-picker').forEach(picker => {
+        picker.addEventListener('input', (e) => {
+            const terrain = e.target.getAttribute('data-terrain');
+            document.documentElement.style.setProperty(`--col-${terrain}`, e.target.value);
+        });
+        picker.addEventListener('change', () => {
+            if (callbacks.saveHistory) callbacks.saveHistory();
+        });
+    });
 }

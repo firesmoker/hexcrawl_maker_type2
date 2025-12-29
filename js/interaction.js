@@ -49,6 +49,30 @@ export function initInteraction() {
     // Keyboard Listeners
     document.addEventListener('keydown', handleKeyDown);
 
+    // Mouse Wheel Zoom (Shift + Scroll)
+    document.addEventListener('wheel', (e) => {
+        if (e.shiftKey) {
+            e.preventDefault();
+            if (dom.zoomInput) {
+                const current = parseFloat(dom.zoomInput.value);
+                const step = parseFloat(dom.zoomInput.step) || 0.1;
+                const max = parseFloat(dom.zoomInput.max) || 2.0;
+                const min = parseFloat(dom.zoomInput.min) || 0.5;
+
+                // Determine direction: deltaY > 0 is scrolling down (zoom out), < 0 is scrolling up (zoom in)
+                const delta = e.deltaY > 0 ? -step : step;
+
+                let newVal = current + delta;
+                newVal = Math.max(min, Math.min(newVal, max));
+
+                if (newVal !== current) {
+                    dom.zoomInput.value = newVal;
+                    dom.zoomInput.dispatchEvent(new Event('input'));
+                }
+            }
+        }
+    }, { passive: false });
+
     // Tool Switching
     if (dom.toolSelect) dom.toolSelect.addEventListener('click', () => setTool('select'));
     if (dom.toolRoad) dom.toolRoad.addEventListener('click', () => setTool('road'));

@@ -229,3 +229,48 @@ export function openPathPopup(path, mouseX, mouseY) {
     dom.pathPopup.style.left = `${popupLeft}px`;
     dom.pathPopup.style.top = `${popupTop}px`;
 }
+
+export function initPopupListeners() {
+    if (dom.btnRemoveAddon) {
+        dom.btnRemoveAddon.addEventListener('click', (e) => {
+            e.stopPropagation();
+            state.selectedHexes.forEach(h => updateAddonDisplay(h, null));
+            if (callbacks.saveHistory) callbacks.saveHistory();
+            closePopup();
+        });
+    }
+
+    if (dom.btnShowAddons) {
+        dom.btnShowAddons.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const top = dom.popup.style.top;
+            const left = dom.popup.style.left;
+            dom.popup.classList.add('hidden');
+            dom.addonPopup.style.top = top;
+            dom.addonPopup.style.left = left;
+            dom.addonPopup.classList.remove('hidden');
+        });
+    }
+
+    // Cluster Selection Button
+    if (dom.btnSelectCluster) {
+        dom.btnSelectCluster.addEventListener('click', (e) => {
+            e.stopPropagation();
+            if (callbacks.onSelectCluster && state.selectedHexes.length > 0) {
+                callbacks.onSelectCluster(state.selectedHexes[0]);
+            }
+        });
+    }
+
+    // Path Popup - Delete Button
+    if (dom.btnDeletePath) {
+        dom.btnDeletePath.addEventListener('click', () => {
+            if (state.selectedPath) {
+                state.selectedPath.remove();
+                state.selectedPath = null;
+                dom.pathPopup.classList.add('hidden');
+                if (callbacks.saveHistory) callbacks.saveHistory();
+            }
+        });
+    }
+}

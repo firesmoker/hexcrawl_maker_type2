@@ -80,14 +80,14 @@ This is the heart of the app. We verify it works *visually* before adding intera
     - Ensure strict usage of `dom` module for element access.
     - **Verify**: Check `js/grid.js` for syntax errors (no execution yet).
 
-- [ ] **Task 7: History Module Extraction**
+- [x] **Task 7: History Module Extraction**
     - Create `js/history.js`.
     - Extract `saveHistory`, `undo`, `redo`, `applyState`.
     - Implement `setHistoryCallbacks` for Grid dependency.
     - **Verify**: `js/history.js` syntax is valid.
     - **Expected App State**: **FULLY FUNCTIONAL** (Uses `script.js`). New file is offline.
 
-- [ ] **Task 8: IO Module Extraction**
+- [x] **Task 8: IO Module Extraction**
     - Create `js/io.js`.
     - Extract Export/Import CSV, Download PNG logic.
     - Implement `setIOCallbacks`.
@@ -97,21 +97,21 @@ This is the heart of the app. We verify it works *visually* before adding intera
 ## Phase 4: Interaction Logic Breakdown
 breaking the complex interaction logic into manageable pieces.
 
-- [ ] **Task 9: Interaction - Selection & Popups**
+- [x] **Task 9: Interaction - Selection & Popups**
     - Create `js/interaction.js` (Structure).
     - Extract `handleClick`, `handleDoubleClick`, `openPopup` integration.
     - Focus ONLY on "Clicking" and "Selecting".
     - **Verify**: Code review of logic transfer.
     - **Expected App State**: **FULLY FUNCTIONAL** (Uses `script.js`). New file is offline.
 
-- [ ] **Task 10: Interaction - Path Painting & Dragging**
+- [x] **Task 10: Interaction - Path Painting & Dragging**
     - Update `js/interaction.js`.
     - Extract `handleMouseDown`, `handleMouseMove`, `handleMouseUp`.
     - Move Path Smoothing logic (`getSmoothPathD` usage).
     - **Verify**: Code review of drag state logic.
     - **Expected App State**: **FULLY FUNCTIONAL** (Uses `script.js`). New file is offline.
 
-- [ ] **Task 11: Interaction - Global Inputs**
+- [x] **Task 11: Interaction - Global Inputs**
     - Update `js/interaction.js`.
     - Extract Keyboard Shortcuts (`Ctrl+Z`, `Ctrl+Y`, `+`, `-`).
     - Extract Zoom Keybinds.
@@ -121,7 +121,7 @@ breaking the complex interaction logic into manageable pieces.
 ## Phase 5: Integration & Switchover
 Putting it all together.
 
-- [ ] **Task 12: Main Assembler (Wiring)**
+- [x] **Task 12: Main Assembler (Wiring)**
     - Update `js/main.js`.
     - Import ALL modules.
     - Perform all `setCallbacks` injections (Wiring).

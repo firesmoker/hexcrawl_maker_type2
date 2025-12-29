@@ -63,6 +63,15 @@ function setTool(tool) {
     if (dom.toolRoad) dom.toolRoad.classList.toggle('active', tool === 'road');
     if (dom.toolRiver) dom.toolRiver.classList.toggle('active', tool === 'river');
 
+    // Toggle Path Layer Interactivity
+    if (dom.pathLayer) {
+        if (tool === 'select') {
+            dom.pathLayer.classList.add('interactive');
+        } else {
+            dom.pathLayer.classList.remove('interactive');
+        }
+    }
+
     // Clear selection
     closePopup();
 }

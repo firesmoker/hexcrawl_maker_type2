@@ -25,7 +25,7 @@ The application will use native browser ES Modules (no build step required).
 | :--- | :--- |
 | `grid.js` | **Core Logic**. Generates the hex grid, manages culling, and renders SVG. |
 | `interaction.js` | **Input**. Handles mouse events (click, drag, painting paths). |
-| `ui.js` | **Display**. Manages Popups, Zoom scaling, and value displays. |
+| `ui_core.js` | **Display**. Manages Popups, Zoom scaling, and value displays. |
 | `history.js` | **Undo/Redo**. Manages state snapshots. |
 | `io.js` | **System**. Import (CSV), Export (CSV), Download (PNG). |
 
@@ -66,7 +66,7 @@ These modules have zero or few dependencies. We will create them first.
 This is the heart of the app. We verify it works *visually* before adding interactions.
 
 - [x] **Task 4: UI Helper Module (Basic)**
-    - Create `js/ui.js`: Extract `updateValDisplay`, `updateZoom`, `updateAddonDisplay`.
+    - Create `js/ui_core.js`: Extract `updateValDisplay`, `updateZoom`, `updateAddonDisplay`.
     - Move `popup` logic (`openPopup`, `closePopup`) here.
     - **critical**: Do NOT import `grid.js` or `history.js` here yet to avoid cycles.
 
@@ -129,23 +129,18 @@ Putting it all together.
     - **Verify**: `js/main.js` has no reference errors.
     - **Expected App State**: **FULLY FUNCTIONAL** (Uses `script.js`). New file is offline.
 
-- [ ] **Task 13: Live Switchover**
+- [x] **Task 13: Live Switchover**
     - Update `index.html`: Change `<script src="script.js">` to `<script type="module" src="js/main.js">`.
     - **Verify**: Load the page. Grid should render.
     - **Expected App State**: **CHANGED**. Logic swaps from `script.js` to `js/main.js`. If valid, it works identically. If invalid, map may fail to load (reversible).
 
-- [ ] **Task 14: Functional Verification**
-    - **Explicitly Test**:
-        1.  Hex Selection (Click).
-        2.  Path Painting (Drag).
-        3.  Zooming (Slider & Keys).
-        4.  IO (Export/Import).
-    - Fix any regressions found immediately.
-    - **Expected App State**: **FUNCTIONAL** (Verification step).
+- [x] **Task 14: Functional Verification**
+    - **Verify**: Full app walkthrough (Generate, Paint, Popups, History, IO).
+    - **Expected App State**: **FULLY FUNCTIONAL**.
 
-- [ ] **Task 15: Clean Up**
-    - Delete `script.js` ONLY after Task 14 passes.
-    - **Expected App State**: **FULLY FUNCTIONAL**. Legacy code removed.
+- [x] **Task 15: Cleanup**
+    - Delete `script.js`.
+    - **Expected App State**: **CLEAN**. Only modular code remains.
 
 ## Verification Checklist after EACH Step
 1.  **Console Check**: No red errors.

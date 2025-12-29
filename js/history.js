@@ -1,6 +1,6 @@
 import { state } from './state.js';
 import { dom } from './dom.js';
-import { updateValDisplay, closePopup, updateAddonDisplay } from './ui.js';
+import { updateValDisplay, closePopup, updateAddonDisplay } from './ui_core.js';
 import { PPI, allTerrains } from './config.js';
 import { getSmoothPathD, getIconDataUri } from './utils.js';
 

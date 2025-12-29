@@ -1,6 +1,6 @@
 import { dom } from './dom.js';
 import { PPI } from './config.js';
-import { closePopup, updateAddonDisplay } from './ui.js';
+import { closePopup, updateAddonDisplay } from './ui_core.js';
 import { getSmoothPathD } from './utils.js';
 
 let callbacks = {

@@ -1,7 +1,7 @@
 import { dom } from './dom.js';
 import { state } from './state.js';
 import { getCluster, syncGhosts } from './grid.js';
-import { openPopup, closePopup, openPathPopup, updateAddonDisplay } from './ui.js';
+import { openPopup, closePopup, openPathPopup, updateAddonDisplay } from './ui_core.js';
 
 import { getSmoothPathD } from './utils.js';
 
@@ -48,6 +48,23 @@ export function initInteraction() {
 
     // Keyboard Listeners
     document.addEventListener('keydown', handleKeyDown);
+
+    // Tool Switching
+    if (dom.toolSelect) dom.toolSelect.addEventListener('click', () => setTool('select'));
+    if (dom.toolRoad) dom.toolRoad.addEventListener('click', () => setTool('road'));
+    if (dom.toolRiver) dom.toolRiver.addEventListener('click', () => setTool('river'));
+}
+
+function setTool(tool) {
+    state.currentTool = tool;
+
+    // Update UI classes
+    if (dom.toolSelect) dom.toolSelect.classList.toggle('active', tool === 'select');
+    if (dom.toolRoad) dom.toolRoad.classList.toggle('active', tool === 'road');
+    if (dom.toolRiver) dom.toolRiver.classList.toggle('active', tool === 'river');
+
+    // Clear selection
+    closePopup();
 }
 
 function handleKeyDown(e) {

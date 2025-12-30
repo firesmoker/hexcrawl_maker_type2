@@ -489,13 +489,20 @@ input[type=range]::-webkit-slider-thumb:hover {
     transition: fill 0.2s;
 }
 
-.hex:hover,
 .hex.selected {
     stroke: var(--accent-color);
     stroke-width: 3px;
     cursor: crosshair;
     filter: drop-shadow(0 0 5px var(--accent-color)) brightness(0.6);
     paint-order: stroke fill;
+}
+
+.hex-highlight {
+    fill: rgba(0, 0, 0, 0.05);
+    stroke: var(--accent-color);
+    stroke-width: 3px;
+    filter: url(#hex-hover-glow);
+    pointer-events: none;
 }
 
 .hex-ghost {

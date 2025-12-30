@@ -182,10 +182,15 @@
                                 yChannelSelector="G" result="displaced" />
                             <feGaussianBlur in="displaced" stdDeviation="0.9" />
                         </filter>
+                        <!-- Glow for hovered hexes -->
+                        <filter id="hex-hover-glow" x="-50%" y="-50%" width="200%" height="200%">
+                            <feDropShadow dx="0" dy="0" stdDeviation="5" flood-color="black" flood-opacity="0.5" />
+                        </filter>
                     </defs>
                     <g id="hex-layer"></g>
                     <g id="path-layer"></g>
                     <g id="addon-layer"></g>
+                    <g id="highlight-layer" pointer-events="none"></g>
                 </svg>
             </div>
         </div>

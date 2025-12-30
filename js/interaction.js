@@ -20,6 +20,7 @@ export function initInteraction() {
     dom.hexLayer.addEventListener('mousedown', handleMouseDown);
     dom.hexLayer.addEventListener('mousemove', handleMouseMove);
     dom.hexLayer.addEventListener('mouseout', handleMouseOut);
+    dom.hexLayer.addEventListener('mouseover', handleMouseOver);
     document.addEventListener('mouseup', handleMouseUp);
     dom.svgGrid.addEventListener('click', handleClick);
     dom.svgGrid.addEventListener('dblclick', handleDoubleClick);
@@ -186,15 +187,18 @@ function handleMouseDown(e) {
 function handleMouseMove(e) {
     if (!state.isMouseDown) return;
 
+    const target = e.target;
+    const isHex = target.classList.contains('hex');
+
     if (state.currentTool !== 'select') {
-        if (state.isPaintingPath && e.target.classList.contains('hex')) {
-            const r = e.target.getAttribute('data-row');
-            const c = e.target.getAttribute('data-col');
+        if (state.isPaintingPath && isHex) {
+            const r = target.getAttribute('data-row');
+            const c = target.getAttribute('data-col');
             const last = state.currentPathHexes[state.currentPathHexes.length - 1];
             if (last !== `${r},${c}`) {
                 state.currentPathHexes.push(`${r},${c}`);
 
-                const transform = e.target.getAttribute('transform');
+                const transform = target.getAttribute('transform');
                 const match = /translate\(([^,]+),\s*([^)]+)\)/.exec(transform);
                 if (match && state.currentPathElement) {
                     const x = parseFloat(match[1]);
@@ -210,8 +214,7 @@ function handleMouseMove(e) {
         return;
     }
 
-    const target = e.target;
-    if (target.classList.contains('hex')) {
+    if (isHex) {
         if (!state.isDragging) {
             state.isDragging = true;
             closePopup();
@@ -228,7 +231,22 @@ function handleMouseMove(e) {
     }
 }
 
+function handleMouseOver(e) {
+    const target = e.target;
+    if (target.classList.contains('hex') && dom.highlightLayer && state.currentTool === 'select' && !state.isMouseDown) {
+        dom.highlightLayer.innerHTML = '';
+        const highlight = target.cloneNode(true);
+        highlight.setAttribute('class', 'hex-highlight');
+        // Clear any ID to avoid duplicates
+        highlight.removeAttribute('id');
+        dom.highlightLayer.appendChild(highlight);
+    }
+}
+
 function handleMouseOut(e) {
+    if (e.target.classList.contains('hex') && dom.highlightLayer) {
+        dom.highlightLayer.innerHTML = '';
+    }
     if (e.target.classList.contains('hex')) {
         if (state.selectedHexes.length > 0) {
             state.selectedHexes.forEach(h => {

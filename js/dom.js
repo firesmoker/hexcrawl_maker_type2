@@ -7,6 +7,7 @@ export const dom = {
     hexLayer: null,
     addonLayer: null,
     pathLayer: null,
+    highlightLayer: null,
     pageContainer: null,
     pageWrapper: null,
 
@@ -59,6 +60,7 @@ export function initDOM() {
     dom.hexLayer = document.getElementById('hex-layer');
     dom.addonLayer = document.getElementById('addon-layer');
     dom.pathLayer = document.getElementById('path-layer');
+    dom.highlightLayer = document.getElementById('highlight-layer');
     dom.pageContainer = document.getElementById('page-container');
     dom.pageWrapper = document.getElementById('page-wrapper');
 

@@ -17,6 +17,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // UI needs to save history when tools change or popups interact
     UI.setUICallbacks({
         saveHistory: History.saveHistory,
+        syncGhosts: Grid.syncGhosts,
         onSelectCluster: (hex) => {
             const cluster = Grid.getCluster(hex);
             // Select visually

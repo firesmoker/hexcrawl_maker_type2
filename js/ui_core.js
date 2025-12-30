@@ -283,18 +283,219 @@ export function initPopupListeners() {
     }
 }
 
-export function initTerrainWeightListeners() {
+// Helper to get all active weight inputs (where checkbox is checked)
+function getActiveWeights() {
+    return Array.from(dom.terrainWeights).filter(input => {
+        const row = input.closest('.terrain-row');
+        const cb = row.querySelector('input[type="checkbox"]');
+        return cb.checked;
+    });
+}
+
+function normalizeWeights() {
+    const active = getActiveWeights();
+    if (active.length === 0) return;
+
+    // Calculate current sum
+    let sum = active.reduce((acc, input) => acc + parseInt(input.value || 0, 10), 0);
+
+    // Validate sum to avoid divide by zero
+    if (sum === 0) {
+        // Edge case: all 0, distribute evenly
+        const even = Math.floor(100 / active.length);
+        active.forEach(input => input.value = even);
+        // Fix remainder
+        const remainder = 100 - (even * active.length);
+        active[0].value = parseInt(active[0].value) + remainder;
+        sum = 100;
+    }
+
+    // Scale to exactly 100
+    let runningTotal = 0;
+    active.forEach((input, i) => {
+        if (i === active.length - 1) {
+            // Last one takes the rest to ensure exact 100
+            input.value = 100 - runningTotal;
+        } else {
+            const rawVal = parseInt(input.value, 10);
+            const percent = (rawVal / sum) * 100;
+            const newVal = Math.round(percent);
+            input.value = newVal;
+            runningTotal += newVal;
+        }
+    });
+
+    // Update visuals
+    updateAllValDisplays();
+}
+
+function updateAllValDisplays() {
     if (dom.terrainWeights) {
         dom.terrainWeights.forEach(input => {
-            const update = () => {
-                const valSpan = input.parentElement.querySelector('.weight-val');
+            const valSpan = input.parentElement.querySelector('.weight-val');
+            // If disabled (unchecked), show 0%
+            const row = input.closest('.terrain-row');
+            const cb = row.querySelector('input[type="checkbox"]');
+
+            if (!cb.checked) {
+                input.disabled = true;
+                input.style.opacity = '0.5';
+                if (valSpan) valSpan.textContent = "0%";
+            } else {
+                input.disabled = false;
+                input.style.opacity = '1';
                 if (valSpan) valSpan.textContent = `${input.value}%`;
-            };
-            input.addEventListener('input', update);
-            // Initialize on load
-            update();
+            }
         });
     }
+}
+
+export function initTerrainWeightListeners() {
+    if (!dom.terrainWeights) return;
+
+    // 1. Initial Normalization
+    // We need to wait for DOM elements to be ready if they aren't already, but initDOM called this.
+    // However, the initial values in HTML sum to >100. We will normalize them.
+    normalizeWeights();
+
+    // 2. Slider Input Listeners
+    dom.terrainWeights.forEach(input => {
+        // Store previous value to calculate delta
+        input.dataset.prevVal = input.value;
+
+        input.addEventListener('input', (e) => {
+            const el = e.target;
+            const newVal = parseInt(el.value, 10);
+            const prevVal = parseInt(el.dataset.prevVal || 0, 10);
+            const delta = newVal - prevVal;
+
+            if (delta === 0) return;
+
+            const active = getActiveWeights();
+            const others = active.filter(opt => opt !== el);
+
+            if (others.length === 0) {
+                // If only one is active, it must be 100%
+                el.value = 100;
+            } else {
+                // We need to remove 'delta' from others
+                // Calculate 'available' sum to take from
+                // We want to distribute the NEGATIVE delta among others
+                let remainingDelta = -delta;
+
+                // If we are increasing the slider, we decrease others.
+                // If we are decreasing, we increase others.
+
+                // Distribution strategy: Proportional to current values
+                const totalOthers = others.reduce((acc, o) => acc + parseInt(o.value || 0, 10), 0);
+
+                if (totalOthers === 0) {
+                    // If all others are 0, distribute evenly
+                    const share = Math.floor(remainingDelta / others.length);
+                    let distRem = remainingDelta - (share * others.length);
+
+                    others.forEach(o => {
+                        let val = parseInt(o.value || 0, 10);
+                        val += share;
+                        if (distRem !== 0) {
+                            val += distRem > 0 ? 1 : -1;
+                            distRem -= distRem > 0 ? 1 : -1;
+                        }
+                        // Clamp
+                        if (val < 0) val = 0;
+                        if (val > 100) val = 100;
+                        o.value = val;
+                    });
+
+                } else {
+                    // Proportional
+                    // We need to be careful with integer rounding error not breaking the 100 sum
+                    // So instead of just adding delta, we might be better off recalculating 'others' 
+                    // to sum to (100 - newVal).
+
+                    const targetOthersSum = 100 - newVal;
+
+                    // Current ratio
+                    // If totalOthers was 0, we handled it above.
+
+                    let runningDistributed = 0;
+                    others.forEach((o, i) => {
+                        if (i === others.length - 1) {
+                            // Last one checks the math
+                            o.value = targetOthersSum - runningDistributed;
+                        } else {
+                            const val = parseInt(o.value || 0, 10);
+                            const ratio = val / totalOthers;
+                            const newOVal = Math.round(ratio * targetOthersSum);
+                            o.value = newOVal;
+                            runningDistributed += newOVal;
+                        }
+                    });
+                }
+            }
+
+            // Update prevVal for all
+            active.forEach(a => a.dataset.prevVal = a.value);
+            updateAllValDisplays();
+        });
+    });
+
+    // 3. Checkbox Listeners
+    const rows = document.querySelectorAll('.terrain-row');
+    rows.forEach(row => {
+        const cb = row.querySelector('input[type="checkbox"]');
+        const slider = row.querySelector('.terrain-weight');
+
+        // Ensure initial state visual
+        updateAllValDisplays();
+
+        cb.addEventListener('change', (e) => {
+            const isChecked = e.target.checked;
+
+            if (!isChecked) {
+                // Being disabled: Set to 0, distribute its value to others
+                const valToDistribute = parseInt(slider.value || 0, 10);
+                slider.value = 0;
+                slider.dataset.prevVal = 0;
+
+                const active = getActiveWeights(); // slider is strictly 'inactive' now based on logic ?? checks DOM?
+                // Note: getActiveWeights checks the checkbox state. Since we just changed it, it should return the others.
+
+                if (active.length > 0) {
+                    // Distribute 'valToDistribute' to 'active'
+                    // Simple verify: re-normalize? 
+                    // Or just normalizeWeights() which sums to <100 and scales up?
+                    // Yes, normalizeWeights scales whatever is there to 100.
+                    normalizeWeights();
+                }
+
+            } else {
+                // Being enabled. Need to take some value.
+                // Let's give it a default share, e.g. 10%, or 100/N
+                const active = getActiveWeights();
+                // Currently it has 0 or whatever old value.
+                // We want to force it to have *something* and then correct others.
+
+                // Strategy: Give it 10 (or 100 if only one), normalize others.
+                if (active.length === 1) {
+                    slider.value = 100;
+                } else {
+                    // Take proportionally? 
+                    // Easiest is: Set to 10 (or less if 100 available), then normalizWeights.
+                    // But normalizeWeights preserves ratios. If we set this to 10, and others sum to 100, total is 110.
+                    // Normalize will scale everyone down slightly. This matches "taking from others".
+
+                    slider.value = 15; // Give it a nice chunk
+                }
+                normalizeWeights();
+            }
+
+            // Refine pointers
+            const activeWeights = getActiveWeights();
+            activeWeights.forEach(a => a.dataset.prevVal = a.value);
+            updateAllValDisplays();
+        });
+    });
 }
 
 export function initColorPickers() {

@@ -9,6 +9,16 @@ The user values:
 2.  **Explicit Verification**: Proving a step worked before moving to the next.
 3.  **App Stability**: The "main branch" (or main entry point) must *never* be broken during a process.
 
+
+## Planning Guidelines
+When constructing a plan, ensure it is:
+1.  **Minimal**: Make minimum changes to the codebase. Seek elegant solutions.
+2.  **Functional**: Completely adheres to task requirements. Works completely. Does not break or change unrelated parts. Decoupled as much as possible.
+3.  **Iterative**: Made out of chronological, ordered tasks. Each task should be small, focused, and easy to verify.
+4.  **Written & Tracked**: The plan must be written to a file, preferably `.agent/current_plan.md` or `.agent/plans/[task_name].md`. It should be a "checklist". You must update the status of tasks in this file as you complete them.
+5.  **Single-threaded**: Never execute more than one task at once, unless SPECIFICALLY told by the user.
+6.  **Dynamic**: If you learn new things while executing the plan and need to change course, you must update the plan file accordingly.
+
 ## 1. Task Execution Workflows
 
 ### A. New Feature Implementation

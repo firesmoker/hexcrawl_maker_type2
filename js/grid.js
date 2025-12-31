@@ -268,7 +268,7 @@ export function generateGrid(preservedData = null) {
                 }
             }
 
-            if (!expanded && budget[type] > 0) {
+            if (!expanded && budget[type] > 0 && q.length === 0) {
                 // Could not expand from current frontier (encircled or empty queue).
                 // Re-seed: Pick a random empty spot anywhere.
                 const availableIds = Array.from(unassignedSlots);

@@ -1,5 +1,5 @@
 import { dom } from './dom.js';
-import { PPI } from './config.js';
+import { PPI, minClusterSizes } from './config.js';
 import { closePopup, updateAddonDisplay } from './ui_core.js';
 import { getSmoothPathD } from './utils.js';
 
@@ -172,115 +172,130 @@ export function generateGrid(preservedData = null) {
         const clusteringFactor = parseFloat(dom.clusteringInput.value); // 0.0 to 1.0
 
         // Initial Seeds
-        // If clustering is 1.0, seedCount = 1 per type.
         // If clustering is 0.0, seedCount = budget[type] (Random).
 
         const openList = slots.filter(s => !s.terrain); // All empty initially
         const unassignedSlots = new Set(openList.map(s => s.key));
 
-        // Queues for expansion
-        const queues = {};
+        // 3. ASSIGNMENT (Allocated Growth)
+        // Instead of per-type queues, we use a list of Cluster objects with specific targets.
+        const clusters = [];
 
-        // Initialize
         specs.forEach(s => {
-            queues[s.type] = [];
             const count = budget[s.type];
             if (count <= 0) return;
 
             // Decide seed count
-            // We scale exponentially or linearly? Linear is predictable.
-            // 0 -> Count seeds
-            // 1 -> 1 seed
-            // Formula: seeds = 1 + (Count - 1) * (1 - clusteringFactor)
             let seedCount = Math.floor(1 + (count - 1) * (1 - clusteringFactor));
-            // Just to be safe
-            if (seedCount > count) seedCount = count;
 
-            // Place Seeds
-            // Randomly pick 'seedCount' empty slots
+            // Cap seeds based on Min Cluster Size
+            const minSize = minClusterSizes[s.type] || minClusterSizes.default;
+            const maxPossibleSeeds = Math.floor(count / minSize);
+
+            if (seedCount > maxPossibleSeeds) {
+                seedCount = maxPossibleSeeds;
+            }
+            if (count > 0 && seedCount < 1) seedCount = 1;
+
+            // Distribute budget among seeds (Reserve + Random Pot)
+            // 1. Give everyone the minimum
+            const baseSize = minSize;
+            let remainder = count - (seedCount * baseSize);
+
+            // Initialize clusters with base size
             for (let i = 0; i < seedCount; i++) {
-                if (budget[s.type] > 0) {
-                    const availableIds = Array.from(unassignedSlots);
-                    if (availableIds.length === 0) break;
+                // Pick a seed
+                const availableIds = Array.from(unassignedSlots);
+                if (availableIds.length === 0) break;
 
-                    const randKey = availableIds[Math.floor(Math.random() * availableIds.length)];
-                    const slot = slots.find(s => s.key === randKey);
+                const randKey = availableIds[Math.floor(Math.random() * availableIds.length)];
+                const slot = slots.find(s => s.key === randKey);
 
-                    slot.terrain = s.type;
-                    budget[s.type]--;
-                    unassignedSlots.delete(randKey);
+                slot.terrain = s.type;
+                unassignedSlots.delete(randKey);
 
-                    queues[s.type].push(slot);
+                clusters.push({
+                    type: s.type,
+                    target: baseSize, // Just the minimum for now
+                    current: 1,
+                    queue: [slot]
+                });
+            }
+
+            // 2. Distribute the remainder randomly among the clusters of this type
+            // We find the clusters we just added
+            const myClusters = clusters.filter(c => c.type === s.type);
+
+            // Distribute remainder randomly
+            // We can give chunks or 1-by-1. 1-by-1 feels most "organic".
+            if (myClusters.length > 0) {
+                for (let i = 0; i < remainder; i++) {
+                    const randomCluster = myClusters[Math.floor(Math.random() * myClusters.length)];
+                    randomCluster.target++;
                 }
             }
         });
 
         // Growth Loop
-        // While there are empty slots and budget remains
-        while (unassignedSlots.size > 0) {
-            // Find which terrains still have budget
-            const hungryTypes = specs.filter(s => budget[s.type] > 0);
-            if (hungryTypes.length === 0) break; // Should not happen if math correct
+        // We cycle until no cluster can grow anymore
+        while (clusters.length > 0 && unassignedSlots.size > 0) {
+            // Filter active clusters: must have room in target, and have expansion candidates (queue not empty)
+            const activeClusters = clusters.filter(c => c.current < c.target && c.queue.length > 0);
 
-            // Pick a random hungry type to expand
-            const currentTypeObj = hungryTypes[Math.floor(Math.random() * hungryTypes.length)];
-            const type = currentTypeObj.type;
-            const q = queues[type];
-
-            let expanded = false;
-
-            // Try to expand from existing queue
-            // We shuffle or pick random from queue to keep it 'blobby' but random?
-            // A true BFS keeps it very circular. Random pick from queue is more irregular.
-            if (q.length > 0) {
-                // Pick a random frontier node
-                const frontierIdx = Math.floor(Math.random() * q.length);
-                const frontier = q[frontierIdx];
-
-                // Get neighbors
-                const r = frontier.r;
-                const c = frontier.c;
-                const nCoords = (r % 2 === 0)
-                    ? [[r, c - 1], [r, c + 1], [r - 1, c - 1], [r - 1, c], [r + 1, c - 1], [r + 1, c]]
-                    : [[r, c - 1], [r, c + 1], [r - 1, c], [r - 1, c + 1], [r + 1, c], [r + 1, c + 1]];
-
-                // Find empty neighbors
-                const emptyNeighbors = [];
-                nCoords.forEach(([nr, nc]) => {
-                    const key = `${nr},${nc}`;
-                    if (unassignedSlots.has(key)) { // It is unassigned
-                        const s = slots.find(sl => sl.key === key);
-                        if (s) emptyNeighbors.push(s);
-                    }
-                });
-
-                if (emptyNeighbors.length > 0) {
-                    // Pick one
-                    const target = emptyNeighbors[Math.floor(Math.random() * emptyNeighbors.length)];
-                    target.terrain = type;
-                    budget[type]--;
-                    unassignedSlots.delete(target.key);
-                    q.push(target);
-                    expanded = true;
-                } else {
-                    // Dead end, remove from queue
-                    q.splice(frontierIdx, 1);
+            if (activeClusters.length === 0) {
+                // All clusters are either full or stuck (dead).
+                // If there are still empty slots, we must enter "Panic Mode" to fill the map.
+                // We pick random stuck clusters and force them to grow beyond target, or pick random neighbors.
+                // Simplest fallback: Just pick ANY cluster with valid queue and let it grow.
+                const anyValidClusters = clusters.filter(c => c.queue.length > 0);
+                if (anyValidClusters.length === 0) {
+                    // Truly stuck. No reachable neighbors from any cluster?
+                    // Fill remaining slots with noise (PLains?) or just stop.
+                    break;
                 }
+
+                // Force growth (ignore target limit)
+                const c = anyValidClusters[Math.floor(Math.random() * anyValidClusters.length)];
+                growCluster(c);
+            } else {
+                // Normal growth
+                const c = activeClusters[Math.floor(Math.random() * activeClusters.length)];
+                growCluster(c);
             }
+        }
 
-            if (!expanded && budget[type] > 0 && q.length === 0) {
-                // Could not expand from current frontier (encircled or empty queue).
-                // Re-seed: Pick a random empty spot anywhere.
-                const availableIds = Array.from(unassignedSlots);
-                if (availableIds.length > 0) {
-                    const randKey = availableIds[Math.floor(Math.random() * availableIds.length)];
-                    const slot = slots.find(s => s.key === randKey);
+        function growCluster(c) {
+            // Pick random frontier node
+            const frontierIdx = Math.floor(Math.random() * c.queue.length);
+            const frontier = c.queue[frontierIdx];
 
-                    slot.terrain = type;
-                    budget[type]--;
-                    unassignedSlots.delete(randKey);
-                    q.push(slot); // Add new seed to queue
+            // Get neighbors
+            const r = frontier.r;
+            const col = frontier.c;
+            const nCoords = (r % 2 === 0)
+                ? [[r, col - 1], [r, col + 1], [r - 1, col - 1], [r - 1, col], [r + 1, col - 1], [r + 1, col]]
+                : [[r, col - 1], [r, col + 1], [r - 1, col], [r - 1, col + 1], [r + 1, col], [r + 1, col + 1]];
+
+            // Find empty neighbors
+            const emptyNeighbors = [];
+            nCoords.forEach(([nr, nc]) => {
+                const key = `${nr},${nc}`;
+                if (unassignedSlots.has(key)) {
+                    const s = slots.find(sl => sl.key === key);
+                    if (s) emptyNeighbors.push(s);
                 }
+            });
+
+            if (emptyNeighbors.length > 0) {
+                // Expand
+                const target = emptyNeighbors[Math.floor(Math.random() * emptyNeighbors.length)];
+                target.terrain = c.type;
+                unassignedSlots.delete(target.key);
+                c.queue.push(target);
+                c.current++;
+            } else {
+                // Dead end
+                c.queue.splice(frontierIdx, 1);
             }
         }
     }

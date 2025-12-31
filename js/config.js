@@ -12,3 +12,13 @@ export const iconSvgs = {
     'mountain': '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="black"><path d="M14,6L10.25,11L13.1,14.8L11.5,16C9.81,13.75 7,10 7,10L1,18H23L14,6Z"/></svg>',
     'encampment': '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="black"><path d="M12,2L2,22H22L12,2M12,6L19,20H16L12,12L8,20H5L12,6Z"/></svg>'
 };
+
+export const minClusterSizes = {
+    'sea': 5,
+    'plains': 10,
+    'swamp': 3,
+    'snow': 1,
+    'desert': 3,
+    'wasteland': 3,
+    'default': 1
+};

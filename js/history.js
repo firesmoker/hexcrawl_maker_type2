@@ -35,8 +35,8 @@ function getExportPaths() {
 function getExportHexes() {
     const hexes = dom.svgGrid.querySelectorAll('.hex:not(.hex-ghost)');
     return Array.from(hexes).map(h => ({
-        r: h.getAttribute('data-row'),
-        c: h.getAttribute('data-col'),
+        r: parseInt(h.getAttribute('data-row')),
+        c: parseInt(h.getAttribute('data-col')),
         t: h.getAttribute('class').replace('hex', '').replace('selected', '').trim(),
         a: h.getAttribute('data-addon') || '',
         l: h.getAttribute('data-label') || ''

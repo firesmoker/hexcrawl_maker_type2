@@ -120,7 +120,7 @@ export function generateGrid(preservedData = null) {
     if (preservedData) {
         // Just map preserved data to slots
         slots.forEach(slot => {
-            const saved = preservedData.find(d => d.r === slot.r && d.c === slot.c);
+            const saved = preservedData.find(d => d.r == slot.r && d.c == slot.c);
             if (saved) {
                 slot.terrain = saved.t;
                 // Addon handled later
